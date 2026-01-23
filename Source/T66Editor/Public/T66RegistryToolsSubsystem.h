@@ -20,4 +20,8 @@ public:
 	// ✅ Applies default UI keybinds into IMC_UI_* (keyboard + gamepad + Steam Deck)
 	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
 	void ApplyDefaultUIKeybinds();
+
+	// ✅ Creates/repairs the required DA_UITheme_* assets and auto-fills safe defaults
+	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
+	void CreateOrRepairUIThemeAssets();
 };

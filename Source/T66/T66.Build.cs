@@ -20,7 +20,8 @@ public class T66 : ModuleRules
             "GameplayStateTreeModule",
             "GameplayTags",
             "UMG",
-            "Slate"
+            "Slate",
+            "SlateCore" // ✅ REQUIRED for FMargin (fixes linker error)
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });

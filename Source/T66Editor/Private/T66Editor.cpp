@@ -1,8 +1,5 @@
 ﻿#include "Modules/ModuleManager.h"
 #include "ToolMenus.h"
-
-#include "AssetRegistry/AssetData.h"
-#include "ContentBrowserMenuContexts.h"
 #include "Editor.h"
 
 #include "T66RegistryToolsSubsystem.h"
@@ -27,175 +24,102 @@ private:
 	{
 		FToolMenuOwnerScoped OwnerScoped(this);
 
-		// ✅ Right-click menu for assets in the Content Browser
-		UToolMenu* Menu = UToolMenus::Get()->ExtendMenu("ContentBrowser.AssetContextMenu");
-		if (!Menu)
+		// ============================================================
+		// ✅ MAIN MENU: Tools -> T66 Tools
+		// ============================================================
+		UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
+		if (!ToolsMenu)
 		{
 			return;
 		}
 
-		FToolMenuSection& Section = Menu->FindOrAddSection("T66Tools");
+		FToolMenuSection& Section = ToolsMenu->FindOrAddSection("T66Tools");
 
-		// ============================================================
-		// ✅ 1) SURFACE REGISTRY MENU ENTRY (DA_UIRegistry_Surfaces)
-		// ============================================================
-		Section.AddDynamicEntry(
-			"T66_FillSurfaceRegistry",
-			FNewToolMenuSectionDelegate::CreateLambda([](FToolMenuSection& InSection)
+		// Helper to get our subsystem cleanly
+		auto GetToolsSubsystem = []() -> UT66RegistryToolsSubsystem*
+			{
+				if (!GEditor)
 				{
-					UContentBrowserAssetContextMenuContext* Context =
-						InSection.FindContext<UContentBrowserAssetContextMenuContext>();
+					return nullptr;
+				}
+				return GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>();
+			};
 
-					if (!Context)
-					{
-						return;
-					}
-
-					bool bHasSurfaceRegistrySelected = false;
-					for (const FAssetData& Asset : Context->SelectedAssets)
-					{
-						if (Asset.AssetName == FName(TEXT("DA_UIRegistry_Surfaces")))
-						{
-							bHasSurfaceRegistrySelected = true;
-							break;
-						}
-					}
-
-					if (!bHasSurfaceRegistrySelected)
-					{
-						return;
-					}
-
-					FToolUIActionChoice Action(FExecuteAction::CreateLambda([]()
-						{
-							if (!GEditor)
-							{
-								return;
-							}
-
-							if (UT66RegistryToolsSubsystem* Tools = GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>())
-							{
-								Tools->FillSurfaceRegistry();
-							}
-						}));
-
-					InSection.AddEntry(FToolMenuEntry::InitMenuEntry(
-						FName("T66_FillSurfaceRegistry_Action"),
-						FText::FromString("T66: Fill Surface Registry"),
-						FText::FromString("Auto-fill DA_UIRegistry_Surfaces by scanning WBP_* widgets."),
-						FSlateIcon(),
-						Action
-					));
-				})
-		);
-
-		// ============================================================
-		// ✅ 2) INPUT CONTEXT REGISTRY MENU ENTRY (DA_T66UIInputContexts)
-		// ============================================================
-		Section.AddDynamicEntry(
-			"T66_FillInputContextRegistry",
-			FNewToolMenuSectionDelegate::CreateLambda([](FToolMenuSection& InSection)
+		// ✅ 1) Fill Surface Registry
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
 				{
-					UContentBrowserAssetContextMenuContext* Context =
-						InSection.FindContext<UContentBrowserAssetContextMenuContext>();
-
-					if (!Context)
+					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
 					{
-						return;
+						Tools->FillSurfaceRegistry();
 					}
+				}));
 
-					bool bHasInputRegistrySelected = false;
-					for (const FAssetData& Asset : Context->SelectedAssets)
-					{
-						if (Asset.AssetName == FName(TEXT("DA_T66UIInputContexts")))
-						{
-							bHasInputRegistrySelected = true;
-							break;
-						}
-					}
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_FillSurfaceRegistry"),
+				FText::FromString("T66 Tools: Fill Surface Registry"),
+				FText::FromString("Auto-fill DA_UIRegistry_Surfaces by scanning WBP_* widgets."),
+				FSlateIcon(),
+				Action
+			));
+		}
 
-					if (!bHasInputRegistrySelected)
-					{
-						return;
-					}
-
-					FToolUIActionChoice Action(FExecuteAction::CreateLambda([]()
-						{
-							if (!GEditor)
-							{
-								return;
-							}
-
-							if (UT66RegistryToolsSubsystem* Tools = GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>())
-							{
-								Tools->FillInputContextRegistry();
-							}
-						}));
-
-					InSection.AddEntry(FToolMenuEntry::InitMenuEntry(
-						FName("T66_FillInputContextRegistry_Action"),
-						FText::FromString("T66: Fill Input Context Registry"),
-						FText::FromString("Auto-fill DA_T66UIInputContexts by scanning IMC_UI_* input contexts."),
-						FSlateIcon(),
-						Action
-					));
-				})
-		);
-
-		// ============================================================
-		// ✅ 3) APPLY DEFAULT UI KEYBINDS (IMC_UI_* gets auto-mapped)
-		//    Triggered by right-clicking DA_T66UIInputContexts
-		// ============================================================
-		Section.AddDynamicEntry(
-			"T66_ApplyDefaultUIKeybinds",
-			FNewToolMenuSectionDelegate::CreateLambda([](FToolMenuSection& InSection)
+		// ✅ 2) Fill Input Context Registry
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
 				{
-					UContentBrowserAssetContextMenuContext* Context =
-						InSection.FindContext<UContentBrowserAssetContextMenuContext>();
-
-					if (!Context)
+					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
 					{
-						return;
+						Tools->FillInputContextRegistry();
 					}
+				}));
 
-					bool bHasInputRegistrySelected = false;
-					for (const FAssetData& Asset : Context->SelectedAssets)
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_FillInputContextRegistry"),
+				FText::FromString("T66 Tools: Fill Input Context Registry"),
+				FText::FromString("Auto-fill DA_T66UIInputContexts by scanning IMC_UI_* assets."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 3) Apply Default UI Keybinds
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+				{
+					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
 					{
-						if (Asset.AssetName == FName(TEXT("DA_T66UIInputContexts")))
-						{
-							bHasInputRegistrySelected = true;
-							break;
-						}
+						Tools->ApplyDefaultUIKeybinds();
 					}
+				}));
 
-					if (!bHasInputRegistrySelected)
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_ApplyDefaultUIKeybinds"),
+				FText::FromString("T66 Tools: Apply Default UI Keybinds"),
+				FText::FromString("Applies default keyboard + gamepad binds to all IMC_UI_* assets."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 4) Create/Repair UI Theme Assets
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+				{
+					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
 					{
-						return;
+						Tools->CreateOrRepairUIThemeAssets();
 					}
+				}));
 
-					FToolUIActionChoice Action(FExecuteAction::CreateLambda([]()
-						{
-							if (!GEditor)
-							{
-								return;
-							}
-
-							if (UT66RegistryToolsSubsystem* Tools = GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>())
-							{
-								// ⚠️ This will clear existing mappings for those actions in IMC_UI_* and apply defaults
-								Tools->ApplyDefaultUIKeybinds();
-							}
-						}));
-
-					InSection.AddEntry(FToolMenuEntry::InitMenuEntry(
-						FName("T66_ApplyDefaultUIKeybinds_Action"),
-						FText::FromString("T66: Apply Default UI Keybinds"),
-						FText::FromString("Applies default keyboard + gamepad binds to all IMC_UI_* assets."),
-						FSlateIcon(),
-						Action
-					));
-				})
-		);
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_CreateOrRepairUIThemeAssets"),
+				FText::FromString("T66 Tools: Create/Repair UI Theme Assets"),
+				FText::FromString("Ensures DA_UITheme_* exist in the canonical folder and fills safe starter tokens."),
+				FSlateIcon(),
+				Action
+			));
+		}
 	}
 };
 
