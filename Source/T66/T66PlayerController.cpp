@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
-
 #include "T66PlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
@@ -13,23 +12,32 @@ void AT66PlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// only spawn touch controls on local player controllers
-	if (ShouldUseTouchControls() && IsLocalPlayerController())
+	// Only do UI + touch controls for local player controllers
+	if (IsLocalPlayerController())
 	{
-		// spawn the mobile controls widget
-		MobileControlsWidget = CreateWidget<UUserWidget>(this, MobileControlsWidgetClass);
+		// 1) Spawn the UI Root (WBP_UIRoot) first so it's the base layer
+		CreateUIRootIfNeeded();
 
-		if (MobileControlsWidget)
+		// 2) Optional: spawn touch controls above it (mobile / forced touch)
+		if (ShouldUseTouchControls())
 		{
-			// add the controls to the player screen
-			MobileControlsWidget->AddToPlayerScreen(0);
+			if (!MobileControlsWidgetClass)
+			{
+				UE_LOG(LogT66, Warning, TEXT("MobileControlsWidgetClass is not set. Touch controls will not spawn."));
+				return;
+			}
 
-		} else {
-
-			UE_LOG(LogT66, Error, TEXT("Could not spawn mobile controls widget."));
-
+			MobileControlsWidget = CreateWidget<UUserWidget>(this, MobileControlsWidgetClass);
+			if (MobileControlsWidget)
+			{
+				// Put touch controls above the UI root
+				MobileControlsWidget->AddToPlayerScreen(100);
+			}
+			else
+			{
+				UE_LOG(LogT66, Error, TEXT("Could not spawn mobile controls widget."));
+			}
 		}
-
 	}
 }
 
@@ -37,23 +45,30 @@ void AT66PlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
 
-	// only add IMCs for local player controllers
+	// Only add IMCs for local player controllers
 	if (IsLocalPlayerController())
 	{
 		// Add Input Mapping Contexts
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem =
+			ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 		{
 			for (UInputMappingContext* CurrentContext : DefaultMappingContexts)
 			{
-				Subsystem->AddMappingContext(CurrentContext, 0);
+				if (CurrentContext)
+				{
+					Subsystem->AddMappingContext(CurrentContext, 0);
+				}
 			}
 
-			// only add these IMCs if we're not using mobile touch input
+			// Only add these IMCs if we're not using mobile touch input
 			if (!ShouldUseTouchControls())
 			{
 				for (UInputMappingContext* CurrentContext : MobileExcludedMappingContexts)
 				{
-					Subsystem->AddMappingContext(CurrentContext, 0);
+					if (CurrentContext)
+					{
+						Subsystem->AddMappingContext(CurrentContext, 0);
+					}
 				}
 			}
 		}
@@ -62,6 +77,32 @@ void AT66PlayerController::SetupInputComponent()
 
 bool AT66PlayerController::ShouldUseTouchControls() const
 {
-	// are we on a mobile platform? Should we force touch?
+	// Are we on a mobile platform? Should we force touch?
 	return SVirtualJoystick::ShouldDisplayTouchInterface() || bForceTouchControls;
+}
+
+void AT66PlayerController::CreateUIRootIfNeeded()
+{
+	if (UIRootWidget)
+	{
+		return; // already created
+	}
+
+	if (!UIRootWidgetClass)
+	{
+		UE_LOG(LogT66, Warning, TEXT("UIRootWidgetClass is not set. UI Root will not spawn."));
+		return;
+	}
+
+	UIRootWidget = CreateWidget<UUserWidget>(this, UIRootWidgetClass);
+	if (!UIRootWidget)
+	{
+		UE_LOG(LogT66, Error, TEXT("Failed to create UI Root widget instance."));
+		return;
+	}
+
+	// ZOrder 0 = base UI layer
+	UIRootWidget->AddToPlayerScreen(0);
+
+	UE_LOG(LogT66, Display, TEXT("Spawned UI Root: %s"), *GetNameSafe(UIRootWidget));
 }

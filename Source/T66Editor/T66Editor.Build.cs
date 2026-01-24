@@ -15,39 +15,42 @@ public class T66Editor : ModuleRules
                 "CoreUObject",
                 "Engine",
 
-				// ✅ Our runtime module (we include runtime DataAsset headers)
-				"T66"
+                // ✅ Our runtime module (we include runtime DataAsset headers)
+                "T66"
             }
         );
 
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-				// ✅ EKeys + keyboard/gamepad key symbols
-				"InputCore",
+                // ✅ EKeys + keyboard/gamepad key symbols
+                "InputCore",
 
-				// ✅ UInputAction / UInputMappingContext
-				"EnhancedInput",
+                // ✅ UInputAction / UInputMappingContext
+                "EnhancedInput",
 
-				// ✅ Gameplay tags
-				"GameplayTags",
+                // ✅ Gameplay tags
+                "GameplayTags",
 
-				// ✅ Asset scanning
-				"AssetRegistry",
+                // ✅ Asset scanning
+                "AssetRegistry",
 
-				// ✅ Editor subsystem + editor APIs
-				"UnrealEd",
+                // ✅ Editor subsystem + editor APIs
+                "UnrealEd",
 
-				// ✅ SaveLoadedAsset
-				"EditorScriptingUtilities",
+                // ✅ SaveLoadedAsset
+                "EditorScriptingUtilities",
 
-				// ✅ Widgets
-				"UMG",
+                // ✅ Widgets (runtime)
+                "UMG",
                 "Slate",
                 "SlateCore",
 
-				// ✅ FIXES YOUR CURRENT ERRORS (ToolMenus + Content Browser context)
-				"ToolMenus",
+                // ✅ Widget Blueprint editor types (UWidgetBlueprint, etc.)
+                "UMGEditor",
+
+                // ✅ ToolMenus + Content Browser context
+                "ToolMenus",
                 "ContentBrowser"
             }
         );
