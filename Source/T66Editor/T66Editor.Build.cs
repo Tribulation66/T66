@@ -38,6 +38,12 @@ public class T66Editor : ModuleRules
                 // ✅ Editor subsystem + editor APIs
                 "UnrealEd",
 
+                // ✅ Blueprint pin categories / schema constants
+                "BlueprintGraph",
+
+                // ✅ Blueprint editor scripting utilities (add vars / set instance editable / compile)
+                "BlueprintEditorLibrary",
+
                 // ✅ SaveLoadedAsset
                 "EditorScriptingUtilities",
 
@@ -46,7 +52,7 @@ public class T66Editor : ModuleRules
                 "Slate",
                 "SlateCore",
 
-                // ✅ Widget Blueprint editor types (UWidgetBlueprint, etc.)
+                // ✅ Widget Blueprint editor types
                 "UMGEditor",
 
                 // ✅ ToolMenus + Content Browser context

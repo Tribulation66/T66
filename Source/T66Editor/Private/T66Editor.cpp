@@ -3,6 +3,7 @@
 #include "Editor.h"
 
 #include "T66RegistryToolsSubsystem.h"
+#include "T66WidgetLayoutToolsSubsystem.h"
 
 class FT66EditorModule : public IModuleInterface
 {
@@ -35,8 +36,8 @@ private:
 
 		FToolMenuSection& Section = ToolsMenu->FindOrAddSection("T66Tools");
 
-		// Helper to get our subsystem cleanly
-		auto GetToolsSubsystem = []() -> UT66RegistryToolsSubsystem*
+		// Helper to get our registry tools subsystem cleanly
+		auto GetRegistryToolsSubsystem = []() -> UT66RegistryToolsSubsystem*
 			{
 				if (!GEditor)
 				{
@@ -45,11 +46,21 @@ private:
 				return GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>();
 			};
 
+		// Helper to get our widget layout tools subsystem cleanly
+		auto GetWidgetLayoutToolsSubsystem = []() -> UT66WidgetLayoutToolsSubsystem*
+			{
+				if (!GEditor)
+				{
+					return nullptr;
+				}
+				return GEditor->GetEditorSubsystem<UT66WidgetLayoutToolsSubsystem>();
+			};
+
 		// ✅ 1) Fill Surface Registry
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
+					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->FillSurfaceRegistry();
 					}
@@ -66,9 +77,9 @@ private:
 
 		// ✅ 2) Fill Input Context Registry
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
+					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->FillInputContextRegistry();
 					}
@@ -85,9 +96,9 @@ private:
 
 		// ✅ 3) Apply Default UI Keybinds
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
+					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->ApplyDefaultUIKeybinds();
 					}
@@ -104,9 +115,9 @@ private:
 
 		// ✅ 4) Create/Repair UI Theme Assets
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetToolsSubsystem())
+					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->CreateOrRepairUIThemeAssets();
 					}
@@ -116,6 +127,44 @@ private:
 				FName("T66Tools_CreateOrRepairUIThemeAssets"),
 				FText::FromString("T66 Tools: Create/Repair UI Theme Assets"),
 				FText::FromString("Ensures DA_UITheme_* exist in the canonical folder and fills safe starter tokens."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 5) Create/Repair UI Button Components (WBP_Comp_Button_Action)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->CreateOrRepairUIButtonComponents();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_CreateOrRepairUIButtonComponents"),
+				FText::FromString("T66 Tools: Create/Repair UI Button Components"),
+				FText::FromString("Repairs WBP_Comp_Button_Action (variables + minimal widget tree). Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 6) Build Minimum Layouts for SELECTED Widget Blueprints (stub for now)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForSelectedWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_Selected"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (Selected Widgets)"),
+				FText::FromString("Stamps minimum layouts for the Widget Blueprints you selected in the Content Browser. Add/Repair only."),
 				FSlateIcon(),
 				Action
 			));
