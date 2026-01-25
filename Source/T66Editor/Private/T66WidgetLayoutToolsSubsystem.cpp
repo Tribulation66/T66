@@ -309,6 +309,39 @@ void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllTooltipWidgetBluep
 	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Tooltips"));
 }
 
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllButtonComponentWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Components/Button");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Components.Button"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllTextComponentWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Components/Text");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Components.Text"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllUIBlocksComponentWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Components/UI_Blocks");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Components.UI_Blocks"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllUtilityUIComponentWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Components/Utility_UI");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Components.Utility_UI"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllComponentWidgetBlueprints()
+{
+	BuildMinimumLayoutsForAllButtonComponentWidgetBlueprints();
+	BuildMinimumLayoutsForAllTextComponentWidgetBlueprints();
+	BuildMinimumLayoutsForAllUIBlocksComponentWidgetBlueprints();
+	BuildMinimumLayoutsForAllUtilityUIComponentWidgetBlueprints();
+}
+
 void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllSurfaceWidgetBlueprints()
 {
 	BuildMinimumLayoutsForAllScreenWidgetBlueprints();

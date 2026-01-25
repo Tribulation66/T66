@@ -35,28 +35,48 @@ public:
 	void BuildMinimumLayoutsForSelectedWidgetBlueprints();
 
 	/**
-	 * Build minimum layouts for ALL Screen surfaces (WBP_Screen_*) using explicit recipes only.
-	 * - Only stamps if the widget has NO root yet (empty designer)
-	 */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllScreenWidgetBlueprints();
-
-	/** Build minimum layouts for ALL Overlay surfaces (WBP_Ov_*) using explicit recipes only. */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
-
-	/** Build minimum layouts for ALL Modal surfaces (WBP_Modal_*) using explicit recipes only. */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllModalWidgetBlueprints();
-
-	/** Build minimum layouts for ALL Tooltip surfaces (WBP_Tooltip_*) using explicit recipes only. */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
-
-	/**
-	 * Convenience: Build minimum layouts for ALL surfaces (Screens + Overlays + Modals + Tooltips).
-	 * Uses explicit recipes only.
+	 * Build minimum layouts for ALL surface Widget Blueprints.
+	 * Searches the canonical surface folders and stamps known widgets using explicit recipes only.
 	 */
 	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
 	void BuildMinimumLayoutsForAllSurfaceWidgetBlueprints();
+
+	/**
+	 * Build minimum layouts for ALL component Widget Blueprints.
+	 * Searches the canonical component folders and stamps known widgets using explicit recipes only.
+	 */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllComponentWidgetBlueprints();
+
+	/** Build minimum layouts for ALL components in /UI/Components/Button (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllButtonComponentWidgetBlueprints();
+
+	/** Build minimum layouts for ALL components in /UI/Components/Text (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllTextComponentWidgetBlueprints();
+
+	/** Build minimum layouts for ALL components in /UI/Components/UI_Blocks (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllUIBlocksComponentWidgetBlueprints();
+
+	/** Build minimum layouts for ALL components in /UI/Components/Utility_UI (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllUtilityUIComponentWidgetBlueprints();
+
+	/** Build minimum layouts for ALL WBP_Screen_* screens (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllScreenWidgetBlueprints();
+
+	/** Build minimum layouts for ALL WBP_Ov_* overlays (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
+
+	/** Build minimum layouts for ALL WBP_Modal_* modals (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllModalWidgetBlueprints();
+
+	/** Build minimum layouts for ALL WBP_Tooltip_* tooltips (explicit recipes only). */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
 };

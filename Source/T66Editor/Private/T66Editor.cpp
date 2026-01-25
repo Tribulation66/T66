@@ -265,6 +265,97 @@ private:
 			));
 		}
 
+		// ✅ 11) Build Minimum Layouts for ALL Components (Buttons + Text + UI_Blocks + Utility_UI)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllComponentWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllComponents"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Components)"),
+				FText::FromString("Stamps minimum layouts for ALL UI components (Buttons, Text, UI_Blocks, Utility_UI). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 12) Build Minimum Layouts for Component Folders (explicit recipes only)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllButtonComponentWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllButtonComponents"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Button Components)"),
+				FText::FromString("Stamps minimum layouts for ALL button components under UI/Components/Button. Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllTextComponentWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllTextComponents"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Text Components)"),
+				FText::FromString("Stamps minimum layouts for ALL text components under UI/Components/Text. Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllUIBlocksComponentWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllUIBlocksComponents"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All UI_Blocks Components)"),
+				FText::FromString("Stamps minimum layouts for ALL UI block components under UI/Components/UI_Blocks. Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllUtilityUIComponentWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllUtilityUIComponents"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Utility_UI Components)"),
+				FText::FromString("Stamps minimum layouts for ALL utility UI components under UI/Components/Utility_UI. Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
 	}
 };
 

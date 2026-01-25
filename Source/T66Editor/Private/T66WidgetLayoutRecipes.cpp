@@ -1897,6 +1897,67 @@ namespace T66WidgetLayoutRecipes_Internal
 	static bool ApplyRecipe_Tooltip_Item(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Item"), FName(TEXT("Panel_Tooltip_Item"))); }
 	static bool ApplyRecipe_Tooltip_Idol(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Idol"), FName(TEXT("Panel_Tooltip_Idol"))); }
 	static bool ApplyRecipe_Tooltip_Enemy(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Enemy"), FName(TEXT("Panel_Tooltip_Enemy"))); }
+
+	// ------------------------------------------------------------
+	// ✅ Components (minimal scaffolds)
+	// ------------------------------------------------------------
+
+	static bool IsComponentWidgetBlueprint(const UWidgetBlueprint* BP)
+	{
+		if (!BP)
+		{
+			return false;
+		}
+
+		const UPackage* Pkg = BP->GetOutermost();
+		if (!Pkg)
+		{
+			return false;
+		}
+
+		const FString PkgName = Pkg->GetName(); // e.g. /Game/Tribulation66/Content/UI/Components/Button/WBP_Comp_Button_Action
+		return PkgName.Contains(TEXT("/UI/Components/"));
+	}
+
+	/**
+	 * Generic component scaffold:
+	 * - If the component widget is completely empty, we inject:
+	 *   Root_Canvas -> Panel_ComponentRoot (full-screen Border)
+	 * - If it already has a root or any layout, we do nothing (repair/add-only).
+	 *
+	 * This avoids guessing internal structure while still making every component "non-empty"
+	 * so Cursor can safely wire into known placeholders later.
+	 */
+	static bool ApplyRecipe_Component_MinimalRoot(UWidgetBlueprint* BP)
+	{
+		if (!BP || !BP->WidgetTree)
+		{
+			return false;
+		}
+
+		if (!IsComponentWidgetBlueprint(BP))
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			// Root exists but is not a CanvasPanel (or some other custom root). Skip for safety.
+			return false;
+		}
+
+		if (!RootCanvasIsInjectable(Root))
+		{
+			// Already has layout (or user-built). Do not overwrite.
+			return false;
+		}
+
+		UBorder* Panel = InjectFullBorder(BP, Root, FName(TEXT("Panel_ComponentRoot")));
+		return (Panel != nullptr);
+	}
 }
 
 namespace T66WidgetLayoutRecipes
@@ -2120,6 +2181,16 @@ namespace T66WidgetLayoutRecipes
 		{
 			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Tooltip_Enemy(WidgetBP);
 		}
+		// ------------------------------------------------------------
+		// ✅ Components (generic minimal scaffold)
+		// ------------------------------------------------------------
+		if (T66WidgetLayoutRecipes_Internal::IsComponentWidgetBlueprint(WidgetBP))
+		{
+			// Note: returns true only if we actually injected a root.
+			// If the component already has any layout, we return false without warning.
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Component_MinimalRoot(WidgetBP);
+		}
+
 		UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] No recipe for: %s"), *Name);
 		return false;
 	}
