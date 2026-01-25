@@ -224,3 +224,95 @@ void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForSelectedWidgetBluepri
 	UE_LOG(LogTemp, Display, TEXT("[T66WidgetLayoutTools] BuildMinimumLayouts complete. Considered=%d | Stamped=%d | Saved=%d"),
 		NumConsidered, NumStamped, NumSaved);
 }
+
+namespace T66WidgetLayoutTools_Internal
+{
+	static void ApplyMinimumLayoutsForAssetPaths(const TArray<FString>& AssetPaths, const TCHAR* GroupLabel)
+	{
+		int32 NumConsidered = 0;
+		int32 NumStamped = 0;
+		int32 NumSaved = 0;
+
+		for (const FString& AssetPath : AssetPaths)
+		{
+			UObject* Loaded = UEditorAssetLibrary::LoadAsset(AssetPath);
+			UWidgetBlueprint* WidgetBP = Cast<UWidgetBlueprint>(Loaded);
+			if (!WidgetBP)
+			{
+				continue;
+			}
+
+			NumConsidered++;
+
+			const bool bApplied = T66WidgetLayoutRecipes::TryApplyRecipe(WidgetBP);
+			if (!bApplied)
+			{
+				// No explicit recipe for this widget name, or couldn't apply (non-empty tree, etc.)
+				continue;
+			}
+
+			NumStamped++;
+
+			UBlueprintEditorLibrary::CompileBlueprint(WidgetBP);
+
+			WidgetBP->MarkPackageDirty();
+			const bool bSaved = UEditorAssetLibrary::SaveLoadedAsset(WidgetBP, /*bOnlyIfIsDirty=*/true);
+			if (bSaved)
+			{
+				NumSaved++;
+			}
+
+			UE_LOG(LogTemp, Display, TEXT("[T66WidgetLayoutTools][%s] Stamped: %s | Saved=%s"),
+				GroupLabel,
+				*WidgetBP->GetName(),
+				bSaved ? TEXT("true") : TEXT("false"));
+		}
+
+		UE_LOG(LogTemp, Display, TEXT("[T66WidgetLayoutTools][%s] Complete. Considered=%d | Stamped=%d | Saved=%d"),
+			GroupLabel, NumConsidered, NumStamped, NumSaved);
+	}
+
+	static void ApplyMinimumLayoutsForRootPath(const FString& RootPath, const TCHAR* GroupLabel)
+	{
+		if (!UEditorAssetLibrary::DoesDirectoryExist(RootPath))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutTools][%s] Directory not found: %s"), GroupLabel, *RootPath);
+			return;
+		}
+
+		TArray<FString> AssetPaths = UEditorAssetLibrary::ListAssets(RootPath, /*bRecursive=*/true, /*bIncludeFolder=*/false);
+		ApplyMinimumLayoutsForAssetPaths(AssetPaths, GroupLabel);
+	}
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllScreenWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Screens");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Screens"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllOverlayWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Overlays");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Overlays"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllModalWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Modals");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Modals"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllTooltipWidgetBlueprints()
+{
+	const FString RootPath = TEXT("/Game/Tribulation66/Content/UI/Tooltips");
+	T66WidgetLayoutTools_Internal::ApplyMinimumLayoutsForRootPath(RootPath, TEXT("Tooltips"));
+}
+
+void UT66WidgetLayoutToolsSubsystem::BuildMinimumLayoutsForAllSurfaceWidgetBlueprints()
+{
+	BuildMinimumLayoutsForAllScreenWidgetBlueprints();
+	BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
+	BuildMinimumLayoutsForAllModalWidgetBlueprints();
+	BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
+}

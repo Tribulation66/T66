@@ -169,6 +169,102 @@ private:
 				Action
 			));
 		}
+
+		// ✅ 6b) Build Minimum Layouts for ALL Screens (WBP_Screen_*)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllScreenWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllScreens"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Screens)"),
+				FText::FromString("Stamps minimum layouts for ALL screens (WBP_Screen_*). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 7) Build Minimum Layouts for ALL Surfaces (Screens + Modals + Overlays + Tooltips)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllSurfaceWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllSurfaces"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Surfaces)"),
+				FText::FromString("Stamps minimum layouts for ALL UI surfaces (Screens, Modals, Overlays, Tooltips). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 8) Build Minimum Layouts for ALL Overlays (WBP_Ov_*)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllOverlays"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Overlays)"),
+				FText::FromString("Stamps minimum layouts for ALL overlays (WBP_Ov_*). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 9) Build Minimum Layouts for ALL Modals (WBP_Modal_*)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllModalWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllModals"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Modals)"),
+				FText::FromString("Stamps minimum layouts for ALL modals (WBP_Modal_*). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
+		// ✅ 10) Build Minimum Layouts for ALL Tooltips (WBP_Tooltip_*)
+		{
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+				{
+					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					{
+						Tools->BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
+					}
+				}));
+
+			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
+				FName("T66Tools_BuildMinimumLayouts_AllTooltips"),
+				FText::FromString("T66 Tools: Build Minimum Layouts (All Tooltips)"),
+				FText::FromString("Stamps minimum layouts for ALL tooltips (WBP_Tooltip_*). Explicit recipes only. Add/Repair only."),
+				FSlateIcon(),
+				Action
+			));
+		}
+
 	}
 };
 

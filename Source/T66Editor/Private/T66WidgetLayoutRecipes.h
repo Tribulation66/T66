@@ -2,27 +2,32 @@
 
 #include "CoreMinimal.h"
 
+// Forward declarations
 class UWidgetBlueprint;
 
 /**
  * T66 Widget Layout Recipes
- * - Contains ONLY per-widget explicit layout stamping recipes.
- * - No generic recipes allowed.
- * - Each recipe must be "repair/add-only":
- *   - Never destroy or rearrange existing user layout.
- *   - Only create missing root/container when the WidgetTree is empty.
- *   - Only set exposed properties if they are empty/unset.
  *
- * The subsystem will:
- * - Gather selected widget blueprints
- * - Call TryApplyRecipe()
- * - Compile + Save
+ * Purpose:
+ *  - Centralized, explicit "minimum layout" stamping for Widget Blueprints.
+ *  - This is intentionally NOT generic auto-layout; each widget blueprint must have a known recipe.
+ *
+ * Coverage (as of this update):
+ *  - Screens      (WBP_Screen_*)
+ *  - Overlays     (WBP_Ov_*)
+ *  - Modals       (WBP_Modal_*)
+ *  - Tooltips     (WBP_Tooltip_*)
+ *
+ * Usage:
+ *  - Called by UT66WidgetLayoutToolsSubsystem when applying recipes (Selected / All).
+ *  - Safe behavior: add/repair only; do not overwrite existing user-built hierarchies.
  */
 namespace T66WidgetLayoutRecipes
 {
 	/**
-	 * Tries to apply the recipe for the given widget blueprint based on its name.
-	 * Returns true only if a recipe existed AND was applied successfully.
+	 * Tries to apply the correct explicit minimum-layout recipe for the given Widget Blueprint.
+	 *
+	 * @return true if a recipe existed for this widget and was applied (or verified), false otherwise.
 	 */
 	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP);
 }

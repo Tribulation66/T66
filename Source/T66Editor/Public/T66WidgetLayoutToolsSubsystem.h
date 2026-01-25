@@ -33,4 +33,30 @@ public:
 	 */
 	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
 	void BuildMinimumLayoutsForSelectedWidgetBlueprints();
+
+	/**
+	 * Build minimum layouts for ALL Screen surfaces (WBP_Screen_*) using explicit recipes only.
+	 * - Only stamps if the widget has NO root yet (empty designer)
+	 */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllScreenWidgetBlueprints();
+
+	/** Build minimum layouts for ALL Overlay surfaces (WBP_Ov_*) using explicit recipes only. */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
+
+	/** Build minimum layouts for ALL Modal surfaces (WBP_Modal_*) using explicit recipes only. */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllModalWidgetBlueprints();
+
+	/** Build minimum layouts for ALL Tooltip surfaces (WBP_Tooltip_*) using explicit recipes only. */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
+
+	/**
+	 * Convenience: Build minimum layouts for ALL surfaces (Screens + Overlays + Modals + Tooltips).
+	 * Uses explicit recipes only.
+	 */
+	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
+	void BuildMinimumLayoutsForAllSurfaceWidgetBlueprints();
 };

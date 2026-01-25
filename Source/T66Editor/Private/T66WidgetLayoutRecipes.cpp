@@ -1357,6 +1357,546 @@ namespace T66WidgetLayoutRecipes_Internal
 
 		return true;
 	}
+
+	// ------------------------------------------------------------
+	// ✅ NEW: Minimum layout recipes for Modals / Overlays / Tooltips
+	// These follow the same Add/Repair-only rules as Screens:
+	// - Only inject when WidgetTree is empty (no RootWidget yet)
+	// - Never overwrite existing layouts
+	// ------------------------------------------------------------
+
+	// ------------------------------------------------------------
+	// Helper: Inject a centered modal window (Backdrop + Window + Body + Buttons)
+	// ------------------------------------------------------------
+	static bool ApplySimpleModal(
+		UWidgetBlueprint* BP,
+		const FString& ExpectedName,
+		const FName BackdropName,
+		const FName WindowName,
+		const FName BodyName,
+		const FName ButtonsVBName,
+		const FVector2D& WindowSize,
+		TFunction<void(UWidgetBlueprint*, UVerticalBox*)> StampButtonsFn)
+	{
+		if (!BP || !BP->WidgetTree || BP->GetName() != ExpectedName)
+		{
+			return false;
+		}
+
+		UClass* ActionButtonClass = LoadActionButtonClass();
+		if (!ActionButtonClass)
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s root exists but isn't a CanvasPanel. Skipping."), *ExpectedName);
+			return false;
+		}
+
+		if (!RootCanvasIsInjectable(Root))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s already has layout. Skipping injection for safety."), *ExpectedName);
+			return false;
+		}
+
+		// Backdrop (full-screen)
+		UBorder* Backdrop = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), BackdropName);
+		Root->AddChild(Backdrop);
+
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Backdrop->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			Slot->SetOffsets(FMargin(0.f));
+			Slot->SetAlignment(FVector2D(0.f, 0.f));
+		}
+
+		// Window (centered)
+		UBorder* Window = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), WindowName);
+		Root->AddChild(Window);
+
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Window->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+			Slot->SetPosition(FVector2D(0.f, 0.f));
+			Slot->SetSize(WindowSize);
+			Slot->SetAutoSize(false);
+		}
+
+		UVerticalBox* VB_Window = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_ModalRoot")));
+		Window->SetContent(VB_Window);
+
+		// Body placeholder
+		UBorder* Body = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), BodyName);
+		VB_Window->AddChildToVerticalBox(Body);
+
+		// Buttons
+		UVerticalBox* VB_Buttons = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), ButtonsVBName);
+		VB_Window->AddChildToVerticalBox(VB_Buttons);
+
+		// Stamp buttons (optional)
+		if (StampButtonsFn)
+		{
+			StampButtonsFn(BP, VB_Buttons);
+		}
+
+		return true;
+	}
+
+	// ------------------------------------------------------------
+	// Modals
+	// ------------------------------------------------------------
+
+	static bool ApplyRecipe_Modal_GenericBlocker(UWidgetBlueprint* BP)
+	{
+		return ApplySimpleModal(
+			BP,
+			TEXT("WBP_Modal_GenericBlocker"),
+			FName(TEXT("Panel_Backdrop")),
+			FName(TEXT("Panel_ModalWindow")),
+			FName(TEXT("Panel_Body")),
+			FName(TEXT("VB_Buttons")),
+			FVector2D(800.f, 520.f),
+			[](UWidgetBlueprint* InBP, UVerticalBox* VB_Buttons)
+			{
+				const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+				const FGameplayTag ActionConfirm = SafeTag(TEXT("UI.Action.Confirm"));
+				const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Confirm")),
+					FText::FromString(TEXT("Confirm")),
+					FocusPrimary,
+					ActionConfirm,
+					FGameplayTag());
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Cancel")),
+					FText::FromString(TEXT("Cancel")),
+					FGameplayTag(),
+					ActionCancel,
+					FGameplayTag());
+			});
+	}
+
+	static bool ApplyRecipe_Modal_DeleteSaveConfirm(UWidgetBlueprint* BP)
+	{
+		return ApplySimpleModal(
+			BP,
+			TEXT("WBP_Modal_DeleteSaveConfirm"),
+			FName(TEXT("Panel_Backdrop")),
+			FName(TEXT("Panel_ModalWindow")),
+			FName(TEXT("Panel_Body")),
+			FName(TEXT("VB_Buttons")),
+			FVector2D(820.f, 540.f),
+			[](UWidgetBlueprint* InBP, UVerticalBox* VB_Buttons)
+			{
+				const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+				const FGameplayTag ActionConfirm = SafeTag(TEXT("UI.Action.Confirm"));
+				const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_DeleteConfirm")),
+					FText::FromString(TEXT("Delete")),
+					FocusPrimary,
+					ActionConfirm,
+					FGameplayTag());
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Cancel")),
+					FText::FromString(TEXT("Cancel")),
+					FGameplayTag(),
+					ActionCancel,
+					FGameplayTag());
+			});
+	}
+
+	static bool ApplyRecipe_Modal_ReportRun(UWidgetBlueprint* BP)
+	{
+		return ApplySimpleModal(
+			BP,
+			TEXT("WBP_Modal_ReportRun"),
+			FName(TEXT("Panel_Backdrop")),
+			FName(TEXT("Panel_ModalWindow")),
+			FName(TEXT("Panel_Form")),
+			FName(TEXT("VB_Buttons")),
+			FVector2D(900.f, 650.f),
+			[](UWidgetBlueprint* InBP, UVerticalBox* VB_Buttons)
+			{
+				const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+				const FGameplayTag ActionSubmit = SafeTag(TEXT("UI.Action.Submit"));
+				const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Submit")),
+					FText::FromString(TEXT("Submit")),
+					FocusPrimary,
+					ActionSubmit,
+					FGameplayTag());
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Cancel")),
+					FText::FromString(TEXT("Cancel")),
+					FGameplayTag(),
+					ActionCancel,
+					FGameplayTag());
+			});
+	}
+
+	static bool ApplyRecipe_Modal_ReportBug(UWidgetBlueprint* BP)
+	{
+		return ApplySimpleModal(
+			BP,
+			TEXT("WBP_Modal_ReportBug"),
+			FName(TEXT("Panel_Backdrop")),
+			FName(TEXT("Panel_ModalWindow")),
+			FName(TEXT("Panel_Form")),
+			FName(TEXT("VB_Buttons")),
+			FVector2D(900.f, 650.f),
+			[](UWidgetBlueprint* InBP, UVerticalBox* VB_Buttons)
+			{
+				const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+				const FGameplayTag ActionSubmit = SafeTag(TEXT("UI.Action.Submit"));
+				const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Submit")),
+					FText::FromString(TEXT("Submit")),
+					FocusPrimary,
+					ActionSubmit,
+					FGameplayTag());
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Cancel")),
+					FText::FromString(TEXT("Cancel")),
+					FGameplayTag(),
+					ActionCancel,
+					FGameplayTag());
+			});
+	}
+
+	static bool ApplyRecipe_Modal_QuitConfirm(UWidgetBlueprint* BP)
+	{
+		return ApplySimpleModal(
+			BP,
+			TEXT("WBP_Modal_QuitConfirm"),
+			FName(TEXT("Panel_Backdrop")),
+			FName(TEXT("Panel_ModalWindow")),
+			FName(TEXT("Panel_Body")),
+			FName(TEXT("VB_Buttons")),
+			FVector2D(820.f, 520.f),
+			[](UWidgetBlueprint* InBP, UVerticalBox* VB_Buttons)
+			{
+				const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+				const FGameplayTag ActionQuit = SafeTag(TEXT("UI.Action.QuitGame"));
+				const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Quit")),
+					FText::FromString(TEXT("Quit Game")),
+					FocusPrimary,
+					ActionQuit,
+					FGameplayTag());
+
+				EnsureActionButton(InBP, VB_Buttons, LoadActionButtonClass(), FName(TEXT("Button_Cancel")),
+					FText::FromString(TEXT("Cancel")),
+					FGameplayTag(),
+					ActionCancel,
+					FGameplayTag());
+			});
+	}
+
+	static bool ApplyRecipe_Modal_Language(UWidgetBlueprint* BP)
+	{
+		if (!BP || !BP->WidgetTree || BP->GetName() != TEXT("WBP_Modal_Language"))
+		{
+			return false;
+		}
+
+		UClass* ActionButtonClass = LoadActionButtonClass();
+		if (!ActionButtonClass)
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] Language root exists but isn't a CanvasPanel. Skipping."));
+			return false;
+		}
+
+		if (!RootCanvasIsInjectable(Root))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] Language already has layout. Skipping injection for safety."));
+			return false;
+		}
+
+		// Backdrop
+		UBorder* Backdrop = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_Backdrop")));
+		Root->AddChild(Backdrop);
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Backdrop->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			Slot->SetOffsets(FMargin(0.f));
+		}
+
+		// Window
+		UBorder* Window = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_ModalWindow")));
+		Root->AddChild(Window);
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Window->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+			Slot->SetPosition(FVector2D(0.f, 0.f));
+			Slot->SetSize(FVector2D(900.f, 650.f));
+			Slot->SetAutoSize(false);
+		}
+
+		UVerticalBox* VB_Window = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_LanguageRoot")));
+		Window->SetContent(VB_Window);
+
+		// List placeholder
+		UBorder* Panel_List = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_LanguageList")));
+		VB_Window->AddChildToVerticalBox(Panel_List);
+
+		UVerticalBox* VB_List = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_LanguageEntries")));
+		Panel_List->SetContent(VB_List);
+
+		// One starter entry (gives Focus.List something to land on)
+		const FGameplayTag FocusList = SafeTag(TEXT("Focus.List"));
+		const FGameplayTag ActionToggle = SafeTag(TEXT("UI.Action.Toggle"));
+		EnsureActionButton(BP, VB_List, ActionButtonClass, FName(TEXT("Button_Language_0")),
+			FText::FromString(TEXT("Language 1")),
+			FocusList,
+			ActionToggle,
+			FGameplayTag());
+
+		// Buttons
+		UVerticalBox* VB_Buttons = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_Buttons")));
+		VB_Window->AddChildToVerticalBox(VB_Buttons);
+
+		const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+		const FGameplayTag ActionApply = SafeTag(TEXT("UI.Action.Apply"));
+		const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+		EnsureActionButton(BP, VB_Buttons, ActionButtonClass, FName(TEXT("Button_Apply")),
+			FText::FromString(TEXT("Apply")),
+			FocusPrimary,
+			ActionApply,
+			FGameplayTag());
+
+		EnsureActionButton(BP, VB_Buttons, ActionButtonClass, FName(TEXT("Button_Cancel")),
+			FText::FromString(TEXT("Cancel")),
+			FGameplayTag(),
+			ActionCancel,
+			FGameplayTag());
+
+		return true;
+	}
+
+	static bool ApplyRecipe_Modal_Settings(UWidgetBlueprint* BP)
+	{
+		if (!BP || !BP->WidgetTree || BP->GetName() != TEXT("WBP_Modal_Settings"))
+		{
+			return false;
+		}
+
+		UClass* ActionButtonClass = LoadActionButtonClass();
+		if (!ActionButtonClass)
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] Settings root exists but isn't a CanvasPanel. Skipping."));
+			return false;
+		}
+
+		if (!RootCanvasIsInjectable(Root))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] Settings already has layout. Skipping injection for safety."));
+			return false;
+		}
+
+		// Backdrop
+		UBorder* Backdrop = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_Backdrop")));
+		Root->AddChild(Backdrop);
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Backdrop->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			Slot->SetOffsets(FMargin(0.f));
+		}
+
+		// Window
+		UBorder* Window = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_SettingsWindow")));
+		Root->AddChild(Window);
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Window->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+			Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+			Slot->SetPosition(FVector2D(0.f, 0.f));
+			Slot->SetSize(FVector2D(1000.f, 700.f));
+			Slot->SetAutoSize(false);
+		}
+
+		UVerticalBox* VB_Window = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_SettingsRoot")));
+		Window->SetContent(VB_Window);
+
+		// Tabs placeholder (Toggle)
+		UBorder* Panel_Tabs = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_Tabs")));
+		VB_Window->AddChildToVerticalBox(Panel_Tabs);
+
+		UVerticalBox* VB_Tabs = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_Tabs")));
+		Panel_Tabs->SetContent(VB_Tabs);
+
+		const FGameplayTag ActionToggle = SafeTag(TEXT("UI.Action.Toggle"));
+
+		EnsureActionButton(BP, VB_Tabs, ActionButtonClass, FName(TEXT("Tab_Audio")),
+			FText::FromString(TEXT("Audio")),
+			FGameplayTag(),
+			ActionToggle,
+			FGameplayTag());
+
+		EnsureActionButton(BP, VB_Tabs, ActionButtonClass, FName(TEXT("Tab_Video")),
+			FText::FromString(TEXT("Video")),
+			FGameplayTag(),
+			ActionToggle,
+			FGameplayTag());
+
+		EnsureActionButton(BP, VB_Tabs, ActionButtonClass, FName(TEXT("Tab_Controls")),
+			FText::FromString(TEXT("Controls")),
+			FGameplayTag(),
+			ActionToggle,
+			FGameplayTag());
+
+		EnsureActionButton(BP, VB_Tabs, ActionButtonClass, FName(TEXT("Tab_Gameplay")),
+			FText::FromString(TEXT("Gameplay")),
+			FGameplayTag(),
+			ActionToggle,
+			FGameplayTag());
+
+		// Body placeholder
+		UBorder* Panel_Body = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), FName(TEXT("Panel_SettingsBody")));
+		VB_Window->AddChildToVerticalBox(Panel_Body);
+
+		// Buttons
+		UVerticalBox* VB_Buttons = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_Buttons")));
+		VB_Window->AddChildToVerticalBox(VB_Buttons);
+
+		const FGameplayTag FocusPrimary = SafeTag(TEXT("Focus.Primary"));
+		const FGameplayTag ActionApply = SafeTag(TEXT("UI.Action.Apply"));
+		const FGameplayTag ActionCancel = SafeTag(TEXT("UI.Action.Cancel"));
+
+		EnsureActionButton(BP, VB_Buttons, ActionButtonClass, FName(TEXT("Button_Apply")),
+			FText::FromString(TEXT("Apply")),
+			FocusPrimary,
+			ActionApply,
+			FGameplayTag());
+
+		EnsureActionButton(BP, VB_Buttons, ActionButtonClass, FName(TEXT("Button_Cancel")),
+			FText::FromString(TEXT("Cancel")),
+			FGameplayTag(),
+			ActionCancel,
+			FGameplayTag());
+
+		return true;
+	}
+
+	// ------------------------------------------------------------
+	// Overlays (minimal scaffolds)
+	// ------------------------------------------------------------
+
+	static bool ApplySimpleOverlay(UWidgetBlueprint* BP, const FString& ExpectedName, const FName PanelName)
+	{
+		if (!BP || !BP->WidgetTree || BP->GetName() != ExpectedName)
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s root exists but isn't a CanvasPanel. Skipping."), *ExpectedName);
+			return false;
+		}
+
+		UBorder* Panel = InjectFullBorder(BP, Root, PanelName);
+		if (!Panel)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s already has layout. Skipping injection."), *ExpectedName);
+			return false;
+		}
+
+		return true;
+	}
+
+	static bool ApplyRecipe_Ov_LoadingBlocker(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_LoadingBlocker"), FName(TEXT("Panel_LoadingBlocker"))); }
+	static bool ApplyRecipe_Ov_ControllerDisconnected(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_ControllerDisconnected"), FName(TEXT("Panel_ControllerDisconnected"))); }
+	static bool ApplyRecipe_Ov_NetworkStatus(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_NetworkStatus"), FName(TEXT("Panel_NetworkStatus"))); }
+	static bool ApplyRecipe_Ov_Toast(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_Toast"), FName(TEXT("Panel_ToastRoot"))); }
+	static bool ApplyRecipe_Ov_RunLoading(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_RunLoading"), FName(TEXT("Panel_RunLoading"))); }
+	static bool ApplyRecipe_Ov_ReadyCheck(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_ReadyCheck"), FName(TEXT("Panel_ReadyCheck"))); }
+	static bool ApplyRecipe_Ov_Altar_IdolSelect(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_Altar_IdolSelect"), FName(TEXT("Panel_Altar_IdolSelect"))); }
+	static bool ApplyRecipe_Ov_SpeedrunTimer(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_SpeedrunTimer"), FName(TEXT("Panel_SpeedrunTimer"))); }
+	static bool ApplyRecipe_Ov_SlotPopup(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_SlotPopup"), FName(TEXT("Panel_SlotPopup"))); }
+	static bool ApplyRecipe_Ov_LootPickup(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_LootPickup"), FName(TEXT("Panel_LootPickup"))); }
+	static bool ApplyRecipe_Ov_Map(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_Map"), FName(TEXT("Panel_Map"))); }
+	static bool ApplyRecipe_Ov_MediaViewer(UWidgetBlueprint* BP) { return ApplySimpleOverlay(BP, TEXT("WBP_Ov_MediaViewer"), FName(TEXT("Panel_MediaViewer"))); }
+
+	// ------------------------------------------------------------
+	// Tooltips (minimal scaffolds)
+	// ------------------------------------------------------------
+
+	static bool ApplySimpleTooltip(UWidgetBlueprint* BP, const FString& ExpectedName, const FName PanelName)
+	{
+		if (!BP || !BP->WidgetTree || BP->GetName() != ExpectedName)
+		{
+			return false;
+		}
+
+		BP->Modify();
+
+		UCanvasPanel* Root = EnsureRootCanvas_IfEmpty(BP, FName(TEXT("Root_Canvas")));
+		if (!Root)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s root exists but isn't a CanvasPanel. Skipping."), *ExpectedName);
+			return false;
+		}
+
+		if (!RootCanvasIsInjectable(Root))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] %s already has layout. Skipping injection."), *ExpectedName);
+			return false;
+		}
+
+		UBorder* Panel = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), PanelName);
+		Root->AddChild(Panel);
+
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Panel->Slot))
+		{
+			// Top-left, autosize (tooltip content will size it)
+			Slot->SetAnchors(FAnchors(0.f, 0.f));
+			Slot->SetAlignment(FVector2D(0.f, 0.f));
+			Slot->SetPosition(FVector2D(0.f, 0.f));
+			Slot->SetAutoSize(true);
+		}
+
+		// Inner container
+		UVerticalBox* VB = BP->WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), FName(TEXT("VB_TooltipLines")));
+		Panel->SetContent(VB);
+
+		return true;
+	}
+
+	static bool ApplyRecipe_Tooltip_Generic(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Generic"), FName(TEXT("Panel_Tooltip_Generic"))); }
+	static bool ApplyRecipe_Tooltip_Item(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Item"), FName(TEXT("Panel_Tooltip_Item"))); }
+	static bool ApplyRecipe_Tooltip_Idol(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Idol"), FName(TEXT("Panel_Tooltip_Idol"))); }
+	static bool ApplyRecipe_Tooltip_Enemy(UWidgetBlueprint* BP) { return ApplySimpleTooltip(BP, TEXT("WBP_Tooltip_Enemy"), FName(TEXT("Panel_Tooltip_Enemy"))); }
 }
 
 namespace T66WidgetLayoutRecipes
@@ -1455,6 +1995,131 @@ namespace T66WidgetLayoutRecipes
 			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Results_ChapterEnd(WidgetBP);
 		}
 
+
+
+		// ------------------------------------------------------------
+		// ✅ Modals
+		// ------------------------------------------------------------
+		if (Name == TEXT("WBP_Modal_GenericBlocker"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_GenericBlocker(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_DeleteSaveConfirm"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_DeleteSaveConfirm(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_ReportRun"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_ReportRun(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_ReportBug"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_ReportBug(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_QuitConfirm"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_QuitConfirm(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_Language"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_Language(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Modal_Settings"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Modal_Settings(WidgetBP);
+		}
+
+		// ------------------------------------------------------------
+		// ✅ Overlays
+		// ------------------------------------------------------------
+		if (Name == TEXT("WBP_Ov_LoadingBlocker"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_LoadingBlocker(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_ControllerDisconnected"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_ControllerDisconnected(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_NetworkStatus"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_NetworkStatus(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_Toast"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_Toast(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_RunLoading"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_RunLoading(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_ReadyCheck"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_ReadyCheck(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_Altar_IdolSelect"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_Altar_IdolSelect(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_SpeedrunTimer"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_SpeedrunTimer(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_SlotPopup"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_SlotPopup(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_LootPickup"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_LootPickup(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_Map"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_Map(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Ov_MediaViewer"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Ov_MediaViewer(WidgetBP);
+		}
+
+		// ------------------------------------------------------------
+		// ✅ Tooltips
+		// ------------------------------------------------------------
+		if (Name == TEXT("WBP_Tooltip_Generic"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Tooltip_Generic(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Tooltip_Item"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Tooltip_Item(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Tooltip_Idol"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Tooltip_Idol(WidgetBP);
+		}
+
+		if (Name == TEXT("WBP_Tooltip_Enemy"))
+		{
+			return T66WidgetLayoutRecipes_Internal::ApplyRecipe_Tooltip_Enemy(WidgetBP);
+		}
 		UE_LOG(LogTemp, Warning, TEXT("[T66WidgetLayoutRecipes] No recipe for: %s"), *Name);
 		return false;
 	}
