@@ -13,6 +13,9 @@
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Border.h"
 
+#include "Components/SizeBox.h"
+#include "Components/PanelWidget.h"
+
 #include "UObject/UnrealType.h"
 
 // ✅ Shared button component classes
@@ -30,9 +33,116 @@ static const FName VAR_LabelText(TEXT("LabelText"));
 
 namespace T66WidgetLayoutRecipes_Internal
 {
+
 	// ------------------------------------------------------------
-	// Utility: Tags + property setting (repair/add-only)
+	// Workbench (Canvas-based free placement + resizing)
 	// ------------------------------------------------------------
+
+	static bool GForceOverride_Current = false;
+	static UCanvasPanel* GWorkbenchRootCanvas = nullptr;
+	static int32 GWorkbenchNextIndex = 0;
+
+	static void ResetWorkbenchContext()
+	{
+		GWorkbenchRootCanvas = nullptr;
+		GWorkbenchNextIndex = 0;
+	}
+
+	static FVector2D ComputeWorkbenchPosition(int32 Index)
+	{
+		const float BaseX = 60.f;
+		const float BaseY = 60.f;
+		const float StepY = 120.f;
+		const float ColumnWidth = 400.f;
+
+		// ~7 items per column keeps the pile manageable without overlaps.
+		const int32 ItemsPerColumn = 7;
+		const int32 Column = Index / ItemsPerColumn;
+		const int32 Row = Index % ItemsPerColumn;
+
+		return FVector2D(BaseX + Column * ColumnWidth, BaseY + Row * StepY);
+	}
+
+	static void EnsureWorkbenchBackground(UWidgetBlueprint* BP, UCanvasPanel* RootCanvas)
+	{
+		if (!BP || !BP->WidgetTree || !RootCanvas)
+		{
+			return;
+		}
+
+		const FName BGName(TEXT("BG_Frame"));
+		if (BP->WidgetTree->FindWidget(BGName) != nullptr)
+		{
+			return;
+		}
+
+		UBorder* BG = BP->WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass(), BGName);
+		if (!BG)
+		{
+			return;
+		}
+
+		RootCanvas->AddChild(BG);
+
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(BG->Slot))
+		{
+			Slot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
+			Slot->SetOffsets(FMargin(0.f));
+			Slot->SetAlignment(FVector2D(0.f, 0.f));
+			Slot->SetAutoSize(false);
+		}
+	}
+
+	static void PlaceOnWorkbench(UWidgetBlueprint* BP, UWidget* Widget)
+	{
+		if (!BP || !BP->WidgetTree || !GWorkbenchRootCanvas || !Widget)
+		{
+			return;
+		}
+
+		// Wrap the widget in a SizeBox so resizing feels stable in the Designer.
+		const FString WrapperStr = FString::Printf(TEXT("Wrapper_%s"), *Widget->GetName());
+		const FName WrapperName(*WrapperStr);
+
+		USizeBox* Wrapper = Cast<USizeBox>(BP->WidgetTree->FindWidget(WrapperName));
+		if (!Wrapper)
+		{
+			Wrapper = BP->WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), WrapperName);
+		}
+
+		if (!Wrapper)
+		{
+			return;
+		}
+
+		// Detach from any previous parent (safety).
+		if (UPanelWidget* OldParent = Widget->GetParent())
+		{
+			OldParent->RemoveChild(Widget);
+		}
+
+		Wrapper->SetContent(Widget);
+
+		// Ensure the wrapper is parented to the root canvas.
+		if (Wrapper->GetParent() == nullptr)
+		{
+			GWorkbenchRootCanvas->AddChild(Wrapper);
+		}
+
+		if (UCanvasPanelSlot* Slot = Cast<UCanvasPanelSlot>(Wrapper->Slot))
+		{
+			const FVector2D Pos = ComputeWorkbenchPosition(GWorkbenchNextIndex++);
+			Slot->SetAnchors(FAnchors(0.f, 0.f));
+			Slot->SetAlignment(FVector2D(0.f, 0.f));
+			Slot->SetPosition(Pos);
+			Slot->SetSize(FVector2D(360.f, 90.f));
+			Slot->SetAutoSize(false);
+		}
+	}
+
+	// ------------------------------------------------------------
+		// Utility: Tags + property setting (repair/add-only)
+		// ------------------------------------------------------------
 
 	static FGameplayTag SafeTag(const FString& TagString)
 	{
@@ -162,13 +272,14 @@ namespace T66WidgetLayoutRecipes_Internal
 		return Cls;
 	}
 
+
 	static UWidget* EnsureUserWidgetInVerticalBox(
 		UWidgetBlueprint* BP,
 		UVerticalBox* VB,
 		UClass* WidgetClass,
 		const FName WidgetName)
 	{
-		if (!BP || !BP->WidgetTree || !VB || !WidgetClass)
+		if (!BP || !BP->WidgetTree || !WidgetClass)
 		{
 			return nullptr;
 		}
@@ -184,7 +295,8 @@ namespace T66WidgetLayoutRecipes_Internal
 			return nullptr;
 		}
 
-		if (!VerticalBoxHasChild(VB, NewWidget))
+		// SAFE and FORCE: attach into the requested box (recipes control structure).
+		if (VB && !VerticalBoxHasChild(VB, NewWidget))
 		{
 			VB->AddChildToVerticalBox(NewWidget);
 		}
@@ -198,7 +310,7 @@ namespace T66WidgetLayoutRecipes_Internal
 		UClass* WidgetClass,
 		const FName WidgetName)
 	{
-		if (!BP || !BP->WidgetTree || !HB || !WidgetClass)
+		if (!BP || !BP->WidgetTree || !WidgetClass)
 		{
 			return nullptr;
 		}
@@ -214,14 +326,14 @@ namespace T66WidgetLayoutRecipes_Internal
 			return nullptr;
 		}
 
-		if (!HorizontalBoxHasChild(HB, NewWidget))
+		// SAFE and FORCE: attach into the requested box (recipes control structure).
+		if (HB && !HorizontalBoxHasChild(HB, NewWidget))
 		{
 			HB->AddChildToHorizontalBox(NewWidget);
 		}
 
 		return NewWidget;
 	}
-
 	static UWidget* EnsureActionButton(
 		UWidgetBlueprint* BP,
 		UVerticalBox* VB,
@@ -276,6 +388,7 @@ namespace T66WidgetLayoutRecipes_Internal
 	// Root safety helpers
 	// ------------------------------------------------------------
 
+
 	static UCanvasPanel* EnsureRootCanvas_IfEmpty(UWidgetBlueprint* BP, const FName RootName)
 	{
 		if (!BP || !BP->WidgetTree)
@@ -283,7 +396,38 @@ namespace T66WidgetLayoutRecipes_Internal
 			return nullptr;
 		}
 
-		// ✅ If a root already exists, never replace it
+		// ✅ FORCE mode: clear the root (or replace it) so recipes can rebuild deterministically.
+		if (GForceOverride_Current)
+		{
+			BP->Modify();
+			BP->WidgetTree->Modify();
+
+			UCanvasPanel* Canvas = Cast<UCanvasPanel>(BP->WidgetTree->RootWidget);
+			if (!Canvas)
+			{
+				Canvas = BP->WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), RootName);
+				if (!Canvas)
+				{
+					return nullptr;
+				}
+
+				BP->WidgetTree->RootWidget = Canvas;
+			}
+			else
+			{
+				Canvas->Modify();
+
+				// Remove all existing children so the recipe can rebuild from a clean slate.
+				while (Canvas->GetChildrenCount() > 0)
+				{
+					Canvas->RemoveChildAt(0);
+				}
+			}
+
+			return Canvas;
+		}
+
+		// SAFE mode: only create root if missing.
 		if (BP->WidgetTree->RootWidget)
 		{
 			return Cast<UCanvasPanel>(BP->WidgetTree->RootWidget);
@@ -303,10 +447,14 @@ namespace T66WidgetLayoutRecipes_Internal
 	{
 		return RootCanvas && (RootCanvas->GetChildrenCount() == 0);
 	}
-
 	static UVerticalBox* InjectCenteredVerticalBox(UWidgetBlueprint* BP, UCanvasPanel* RootCanvas, const FName VBName, const FVector2D& Size)
 	{
-		if (!BP || !BP->WidgetTree || !RootCanvas)
+		if (!BP || !BP->WidgetTree)
+		{
+			return nullptr;
+		}
+
+		if (!RootCanvas)
 		{
 			return nullptr;
 		}
@@ -341,9 +489,15 @@ namespace T66WidgetLayoutRecipes_Internal
 		return VB;
 	}
 
+
 	static UBorder* InjectFullBorder(UWidgetBlueprint* BP, UCanvasPanel* RootCanvas, const FName BorderName)
 	{
-		if (!BP || !BP->WidgetTree || !RootCanvas)
+		if (!BP || !BP->WidgetTree)
+		{
+			return nullptr;
+		}
+
+		if (!RootCanvas)
 		{
 			return nullptr;
 		}
@@ -371,14 +525,11 @@ namespace T66WidgetLayoutRecipes_Internal
 			Slot->SetAnchors(FAnchors(0.f, 0.f, 1.f, 1.f));
 			Slot->SetOffsets(FMargin(0.f));
 			Slot->SetAlignment(FVector2D(0.f, 0.f));
+			Slot->SetAutoSize(false);
 		}
 
 		return Border;
 	}
-
-	// ------------------------------------------------------------
-	// Recipe: BootIntro (auto)
-	// ------------------------------------------------------------
 
 	static bool ApplyRecipe_BootIntro(UWidgetBlueprint* BP)
 	{
@@ -1962,8 +2113,10 @@ namespace T66WidgetLayoutRecipes_Internal
 
 namespace T66WidgetLayoutRecipes
 {
-	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP)
+	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP, bool bForceOverride)
 	{
+		T66WidgetLayoutRecipes_Internal::GForceOverride_Current = bForceOverride;
+
 		if (!WidgetBP)
 		{
 			return false;

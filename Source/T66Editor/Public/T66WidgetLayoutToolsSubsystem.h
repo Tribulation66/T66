@@ -1,16 +1,16 @@
 #pragma once
 
+#include "CoreMinimal.h"
 #include "EditorSubsystem.h"
 #include "T66WidgetLayoutToolsSubsystem.generated.h"
 
 /**
  * UT66WidgetLayoutToolsSubsystem
- * Editor-only utilities for repairing/stamping Widget Blueprints.
+ * Editor-only utilities for stamping/repairing Widget Blueprints.
  *
- * Repair/Add-only policy:
- * - Never deletes
- * - Never repositions existing widgets
- * - Only adds missing components/vars by exact name
+ * FINAL POLICY (Contracts):
+ * - SAFE: Add/Repair only (no overwriting existing structure)
+ * - FORCE: Delete + rebuild from recipe (apply newest contracts exactly)
  */
 UCLASS()
 class T66EDITOR_API UT66WidgetLayoutToolsSubsystem : public UEditorSubsystem
@@ -19,64 +19,48 @@ class T66EDITOR_API UT66WidgetLayoutToolsSubsystem : public UEditorSubsystem
 
 public:
 	/**
+	 * Create/Repair UI Widget Contracts for the Widget Blueprints selected in the Content Browser.
+	 * SAFE MODE:
+	 * - Adds missing required child widgets / components
+	 * - Ensures required contract properties exist (inherited)
+	 * - Sets/repairs SurfaceType + WidgetID where applicable
+	 * - Does NOT remove existing widgets or overwrite layout
+	 */
+	UFUNCTION(CallInEditor, Category = "T66|UI|Contracts")
+	void CreateOrRepairUIWidgetContracts_SelectedWidgets_Safe();
+
+	/**
+	 * Create/Repair UI Widget Contracts for the Widget Blueprints selected in the Content Browser.
+	 * FORCE OVERWRITE MODE:
+	 * - Deletes + rebuilds widget tree from recipe
+	 * - Applies the newest contract structure/layout exactly
+	 * - Use when recipes change and you want them re-applied
+	 */
+	UFUNCTION(CallInEditor, Category = "T66|UI|Contracts")
+	void CreateOrRepairUIWidgetContracts_SelectedWidgets_ForceOverwrite();
+
+	// ---------------------------------------------------------------------
+	// Legacy / transitional tools (kept temporarily so we don't break builds).
+	// These will be folded into the Contracts system and can be removed later.
+	// ---------------------------------------------------------------------
+
+	/**
 	 * Creates/repairs WBP_Comp_Button_Action:
 	 * - Adds required exposed variables (ControlID/ActionTag/RouteTag/LabelText)
 	 * - Adds minimal widget tree if empty (Button_Root -> Text_Label)
+	 *
+	 * NOTE: This will be absorbed into the Contracts system.
 	 */
 	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
 	void CreateOrRepairUIButtonComponents();
 
 	/**
-	 * Build minimum layouts for selected Widget Blueprints (explicit recipes only).
-	 * - Only runs for known widget names (no generic)
-	 * - Only stamps if the widget has NO root yet (empty designer)
+	 * Build minimum layouts for selected Widget Blueprints.
+	 * - Uses explicit recipes (by widget name/path) from T66WidgetLayoutRecipes
+	 * - Force override: rebuilds the widget tree for each selected widget blueprint
+	 *
+	 * NOTE: This will be absorbed into the Contracts system.
 	 */
 	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
 	void BuildMinimumLayoutsForSelectedWidgetBlueprints();
-
-	/**
-	 * Build minimum layouts for ALL surface Widget Blueprints.
-	 * Searches the canonical surface folders and stamps known widgets using explicit recipes only.
-	 */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllSurfaceWidgetBlueprints();
-
-	/**
-	 * Build minimum layouts for ALL component Widget Blueprints.
-	 * Searches the canonical component folders and stamps known widgets using explicit recipes only.
-	 */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllComponentWidgetBlueprints();
-
-	/** Build minimum layouts for ALL components in /UI/Components/Button (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllButtonComponentWidgetBlueprints();
-
-	/** Build minimum layouts for ALL components in /UI/Components/Text (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllTextComponentWidgetBlueprints();
-
-	/** Build minimum layouts for ALL components in /UI/Components/UI_Blocks (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllUIBlocksComponentWidgetBlueprints();
-
-	/** Build minimum layouts for ALL components in /UI/Components/Utility_UI (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllUtilityUIComponentWidgetBlueprints();
-
-	/** Build minimum layouts for ALL WBP_Screen_* screens (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllScreenWidgetBlueprints();
-
-	/** Build minimum layouts for ALL WBP_Ov_* overlays (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllOverlayWidgetBlueprints();
-
-	/** Build minimum layouts for ALL WBP_Modal_* modals (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllModalWidgetBlueprints();
-
-	/** Build minimum layouts for ALL WBP_Tooltip_* tooltips (explicit recipes only). */
-	UFUNCTION(CallInEditor, Category = "T66|WidgetLayoutTools")
-	void BuildMinimumLayoutsForAllTooltipWidgetBlueprints();
 };

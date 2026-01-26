@@ -6,31 +6,44 @@
 class UWidgetBlueprint;
 
 /**
- * T66 Widget Layout Recipes
+ * T66 Widget Layout Recipes (Contract Recipes)
  *
- * Purpose:
- *  - Centralized, explicit "minimum layout" stamping for Widget Blueprints.
- *  - This is intentionally NOT generic auto-layout; each widget blueprint must have a known recipe.
+ * This file is now the "Contract Library" for Widget Blueprints.
  *
- * Coverage (as of this update):
- *  - Screens      (WBP_Screen_*)
- *  - Overlays     (WBP_Ov_*)
- *  - Modals       (WBP_Modal_*)
- *  - Tooltips     (WBP_Tooltip_*)
- *  - Components   (any WBP_* under /Game/Tribulation66/Content/UI/Components/*)
- *      - Components use a safe generic minimum scaffold ONLY when the widget blueprint is empty.
- *      - If a component already has a designer-built hierarchy, recipes DO NOT overwrite it.
+ * The Contracts Tool calls into this library to:
+ *  - Ensure required named children exist (BG_Frame, VB_MainMenu, Button_NewGame, etc.)
+ *  - Ensure required "pins exist for wiring later" (variables/properties if present)
+ *  - (Later) enforce/repair WidgetID + SurfaceType properties on the class defaults
+ *  - Optionally stamp a minimal layout when structure is missing
  *
- * Usage:
- *  - Called by UT66WidgetLayoutToolsSubsystem when applying recipes (Selected / All).
- *  - Safe behavior: add/repair only; do not overwrite existing user-built hierarchies.
+ * Apply Modes:
+ *  - SAFE (bForceOverride=false): Add/Repair only. Never delete or overwrite existing structure.
+ *  - FORCE (bForceOverride=true): Delete + rebuild from recipe so new recipes can re-apply cleanly.
+ *
+ * NOTE:
+ *  - The recipes are deterministic and explicit by Widget Blueprint name.
+ *  - Your designers (you) can still freely resize/move things after stamping.
  */
 namespace T66WidgetLayoutRecipes
 {
 	/**
-	 * Tries to apply the correct explicit minimum-layout recipe for the given Widget Blueprint.
+	 * Tries to apply the correct contract recipe for the given Widget Blueprint.
 	 *
-	 * @return true if a recipe existed for this widget and was applied (or verified), false otherwise.
+	 * @param WidgetBP        Widget Blueprint to stamp/repair.
+	 * @param bForceOverride  SAFE=false (repair/add only), FORCE=true (delete + rebuild)
+	 *
+	 * @return true if a recipe existed for this widget and was applied, false otherwise.
 	 */
-	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP);
+	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP, bool bForceOverride);
+
+	// Small convenience helpers (do not require cpp implementation)
+	inline bool TryApplyRecipe_Safe(UWidgetBlueprint* WidgetBP)
+	{
+		return TryApplyRecipe(WidgetBP, /*bForceOverride=*/false);
+	}
+
+	inline bool TryApplyRecipe_Force(UWidgetBlueprint* WidgetBP)
+	{
+		return TryApplyRecipe(WidgetBP, /*bForceOverride=*/true);
+	}
 }
