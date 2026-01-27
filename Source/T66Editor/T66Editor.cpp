@@ -2,7 +2,7 @@
 #include "ToolMenus.h"
 #include "Editor.h"
 
-#include "T66RegistryToolsSubsystem.h"
+#include "T66RegistryTools.h"
 #include "T66WidgetTools.h"
 
 class FT66EditorModule : public IModuleInterface
@@ -33,10 +33,10 @@ private:
 
 		FToolMenuSection& Section = ToolsMenu->FindOrAddSection("T66Tools");
 
-		auto GetRegistryToolsSubsystem = []() -> UT66RegistryToolsSubsystem*
+		auto GetRegistryToolsSubsystem = []() -> UT66RegistryTools*
 			{
 				if (!GEditor) return nullptr;
-				return GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>();
+				return GEditor->GetEditorSubsystem<UT66RegistryTools>();
 			};
 
 		auto GetWidgetTools = []() -> UT66WidgetTools*
@@ -49,7 +49,7 @@ private:
 		{
 			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
+					if (UT66RegistryTools* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->FillSurfaceRegistry();
 					}
@@ -68,7 +68,7 @@ private:
 		{
 			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
+					if (UT66RegistryTools* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->FillInputContextRegistry();
 					}
@@ -87,7 +87,7 @@ private:
 		{
 			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
+					if (UT66RegistryTools* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->ApplyDefaultUIKeybinds();
 					}
@@ -106,7 +106,7 @@ private:
 		{
 			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
 				{
-					if (UT66RegistryToolsSubsystem* Tools = GetRegistryToolsSubsystem())
+					if (UT66RegistryTools* Tools = GetRegistryToolsSubsystem())
 					{
 						Tools->CreateOrRepairUIThemeAssets();
 					}

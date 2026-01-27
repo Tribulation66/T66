@@ -1,5 +1,4 @@
-﻿#include "T66RegistryToolsSubsystem.h"
-
+﻿#include "T66RegistryTools.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetRegistry/IAssetRegistry.h"
 #include "EditorAssetLibrary.h"
@@ -18,7 +17,7 @@
 #include "InputCoreTypes.h"
 #include "InputMappingContext.h"
 
-void UT66RegistryToolsSubsystem::FillSurfaceRegistry()
+void UT66RegistryTools::FillSurfaceRegistry()
 {
 	// ✅ Scan the entire project so it works regardless of folder layout
 	const FString WidgetRootPath = TEXT("/Game");
@@ -54,7 +53,7 @@ void UT66RegistryToolsSubsystem::FillSurfaceRegistry()
 
 	if (!Registry)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[T66RegistryToolsSubsystem] Could not find DA_UIRegistry_Surfaces (UT66UISurfaceRegistryDataAsset)."));
+		UE_LOG(LogTemp, Error, TEXT("[T66RegistryTools] Could not find DA_UIRegistry_Surfaces (UT66UISurfaceRegistryDataAsset)."));
 		return;
 	}
 
@@ -85,7 +84,7 @@ void UT66RegistryToolsSubsystem::FillSurfaceRegistry()
 			const FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(*TagString), /*ErrorIfNotFound=*/false);
 			if (!Tag.IsValid())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[T66RegistryToolsSubsystem] GameplayTag missing: %s (skipping)"), *TagString);
+				UE_LOG(LogTemp, Warning, TEXT("[T66RegistryTools] GameplayTag missing: %s (skipping)"), *TagString);
 				return;
 			}
 
@@ -115,12 +114,12 @@ void UT66RegistryToolsSubsystem::FillSurfaceRegistry()
 
 	const bool bSaved = UEditorAssetLibrary::SaveLoadedAsset(Registry, /*bOnlyIfIsDirty=*/true);
 
-	UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] Filled Surface Registry: %d entries | Saved=%s"),
+	UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] Filled Surface Registry: %d entries | Saved=%s"),
 		NewMap.Num(),
 		bSaved ? TEXT("true") : TEXT("false"));
 }
 
-void UT66RegistryToolsSubsystem::FillInputContextRegistry()
+void UT66RegistryTools::FillInputContextRegistry()
 {
 	// ✅ Scan the entire project so it works regardless of folder layout
 	const FString IMCRootPath = TEXT("/Game");
@@ -156,7 +155,7 @@ void UT66RegistryToolsSubsystem::FillInputContextRegistry()
 
 	if (!Registry)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[T66RegistryToolsSubsystem] Could not find DA_T66UIInputContexts (UT66UIInputContextRegistryDA)."));
+		UE_LOG(LogTemp, Error, TEXT("[T66RegistryTools] Could not find DA_T66UIInputContexts (UT66UIInputContextRegistryDA)."));
 		return;
 	}
 
@@ -195,7 +194,7 @@ void UT66RegistryToolsSubsystem::FillInputContextRegistry()
 		const FGameplayTag Tag = FGameplayTag::RequestGameplayTag(FName(*TagString), /*ErrorIfNotFound=*/false);
 		if (!Tag.IsValid())
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[T66RegistryToolsSubsystem] GameplayTag missing: %s (skipping)"), *TagString);
+			UE_LOG(LogTemp, Warning, TEXT("[T66RegistryTools] GameplayTag missing: %s (skipping)"), *TagString);
 			continue;
 		}
 
@@ -214,12 +213,12 @@ void UT66RegistryToolsSubsystem::FillInputContextRegistry()
 
 	const bool bSaved = UEditorAssetLibrary::SaveLoadedAsset(Registry, /*bOnlyIfIsDirty=*/true);
 
-	UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] Filled Input Context Registry: %d entries | Saved=%s"),
+	UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] Filled Input Context Registry: %d entries | Saved=%s"),
 		NewMap.Num(),
 		bSaved ? TEXT("true") : TEXT("false"));
 }
 
-void UT66RegistryToolsSubsystem::ApplyDefaultUIKeybinds()
+void UT66RegistryTools::ApplyDefaultUIKeybinds()
 {
 	// ✅ Scan the entire project
 	const FString RootPath = TEXT("/Game");
@@ -268,7 +267,7 @@ void UT66RegistryToolsSubsystem::ApplyDefaultUIKeybinds()
 				return *Found;
 			}
 
-			UE_LOG(LogTemp, Warning, TEXT("[T66RegistryToolsSubsystem] Missing InputAction asset: %s"), *Name);
+			UE_LOG(LogTemp, Warning, TEXT("[T66RegistryTools] Missing InputAction asset: %s"), *Name);
 			return nullptr;
 		};
 
@@ -320,7 +319,7 @@ void UT66RegistryToolsSubsystem::ApplyDefaultUIKeybinds()
 
 	if (UIIMCs.Num() == 0)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[T66RegistryToolsSubsystem] No IMC_UI_* assets found. Nothing to apply."));
+		UE_LOG(LogTemp, Warning, TEXT("[T66RegistryTools] No IMC_UI_* assets found. Nothing to apply."));
 		return;
 	}
 
@@ -412,16 +411,16 @@ void UT66RegistryToolsSubsystem::ApplyDefaultUIKeybinds()
 			NumContextsSaved++;
 		}
 
-		UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] Applied default UI keybinds to: %s | Saved=%s"),
+		UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] Applied default UI keybinds to: %s | Saved=%s"),
 			*IMC->GetName(),
 			bSaved ? TEXT("true") : TEXT("false"));
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] ApplyDefaultUIKeybinds complete. Contexts updated: %d"),
+	UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] ApplyDefaultUIKeybinds complete. Contexts updated: %d"),
 		NumContextsSaved);
 }
 
-void UT66RegistryToolsSubsystem::CreateOrRepairUIThemeAssets()
+void UT66RegistryTools::CreateOrRepairUIThemeAssets()
 {
 	// ------------------------------------------------------------
 	// Goal:
@@ -527,7 +526,7 @@ void UT66RegistryToolsSubsystem::CreateOrRepairUIThemeAssets()
 				}
 				else
 				{
-					UE_LOG(LogTemp, Warning, TEXT("[T66RegistryToolsSubsystem] Found legacy theme asset but failed to move: %s"), *LegacyObjectPath);
+					UE_LOG(LogTemp, Warning, TEXT("[T66RegistryTools] Found legacy theme asset but failed to move: %s"), *LegacyObjectPath);
 				}
 			}
 
@@ -544,14 +543,14 @@ void UT66RegistryToolsSubsystem::CreateOrRepairUIThemeAssets()
 			UPackage* Package = CreatePackage(*CanonicalPackagePath);
 			if (!Package)
 			{
-				UE_LOG(LogTemp, Error, TEXT("[T66RegistryToolsSubsystem] Failed to create package for %s"), *CanonicalPackagePath);
+				UE_LOG(LogTemp, Error, TEXT("[T66RegistryTools] Failed to create package for %s"), *CanonicalPackagePath);
 				continue;
 			}
 
 			ThemeDA = NewObject<UT66UIThemeDA>(Package, UT66UIThemeDA::StaticClass(), *AssetName, RF_Public | RF_Standalone);
 			if (!ThemeDA)
 			{
-				UE_LOG(LogTemp, Error, TEXT("[T66RegistryToolsSubsystem] Failed to create theme asset object: %s"), *AssetName);
+				UE_LOG(LogTemp, Error, TEXT("[T66RegistryTools] Failed to create theme asset object: %s"), *AssetName);
 				continue;
 			}
 
@@ -598,12 +597,12 @@ void UT66RegistryToolsSubsystem::CreateOrRepairUIThemeAssets()
 			NumSaved++;
 		}
 
-		UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] Theme asset processed: %s | Saved=%s"),
+		UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] Theme asset processed: %s | Saved=%s"),
 			*AssetName,
 			bSaved ? TEXT("true") : TEXT("false"));
 	}
 
-	UE_LOG(LogTemp, Display, TEXT("[T66RegistryToolsSubsystem] CreateOrRepairUIThemeAssets complete. Created=%d | Moved=%d | Saved=%d | CanonicalFolder=%s"),
+	UE_LOG(LogTemp, Display, TEXT("[T66RegistryTools] CreateOrRepairUIThemeAssets complete. Created=%d | Moved=%d | Saved=%d | CanonicalFolder=%s"),
 		NumCreated,
 		NumMoved,
 		NumSaved,

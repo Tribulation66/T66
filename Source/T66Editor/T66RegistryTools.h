@@ -1,10 +1,11 @@
 ﻿#pragma once
 
+#include "CoreMinimal.h"
 #include "EditorSubsystem.h"
-#include "T66RegistryToolsSubsystem.generated.h"
+#include "T66RegistryTools.generated.h"
 
 UCLASS()
-class T66EDITOR_API UT66RegistryToolsSubsystem : public UEditorSubsystem
+class T66EDITOR_API UT66RegistryTools : public UEditorSubsystem
 {
 	GENERATED_BODY()
 
