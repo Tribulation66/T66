@@ -3,7 +3,7 @@
 #include "Editor.h"
 
 #include "T66RegistryToolsSubsystem.h"
-#include "T66WidgetLayoutToolsSubsystem.h"
+#include "T66WidgetTools.h"
 
 class FT66EditorModule : public IModuleInterface
 {
@@ -25,9 +25,6 @@ private:
 	{
 		FToolMenuOwnerScoped OwnerScoped(this);
 
-		// ============================================================
-		// MAIN MENU: Tools -> T66 Tools
-		// ============================================================
 		UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
 		if (!ToolsMenu)
 		{
@@ -36,24 +33,16 @@ private:
 
 		FToolMenuSection& Section = ToolsMenu->FindOrAddSection("T66Tools");
 
-		// Helper to get our registry tools subsystem cleanly
 		auto GetRegistryToolsSubsystem = []() -> UT66RegistryToolsSubsystem*
 			{
-				if (!GEditor)
-				{
-					return nullptr;
-				}
+				if (!GEditor) return nullptr;
 				return GEditor->GetEditorSubsystem<UT66RegistryToolsSubsystem>();
 			};
 
-		// Helper to get our widget layout/tools subsystem cleanly
-		auto GetWidgetLayoutToolsSubsystem = []() -> UT66WidgetLayoutToolsSubsystem*
+		auto GetWidgetTools = []() -> UT66WidgetTools*
 			{
-				if (!GEditor)
-				{
-					return nullptr;
-				}
-				return GEditor->GetEditorSubsystem<UT66WidgetLayoutToolsSubsystem>();
+				if (!GEditor) return nullptr;
+				return GEditor->GetEditorSubsystem<UT66WidgetTools>();
 			};
 
 		// 1) Fill Surface Registry
@@ -132,11 +121,11 @@ private:
 			));
 		}
 
-		// 5) Create/Repair UI Widget Contracts (Selected Widgets) - SAFE
+		// 5) Contracts SAFE
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetTools]()
 				{
-					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					if (UT66WidgetTools* Tools = GetWidgetTools())
 					{
 						Tools->CreateOrRepairUIWidgetContracts_SelectedWidgets_Safe();
 					}
@@ -151,11 +140,11 @@ private:
 			));
 		}
 
-		// 6) Create/Repair UI Widget Contracts (Selected Widgets) - FORCE OVERWRITE
+		// 6) Contracts FORCE
 		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetLayoutToolsSubsystem]()
+			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetWidgetTools]()
 				{
-					if (UT66WidgetLayoutToolsSubsystem* Tools = GetWidgetLayoutToolsSubsystem())
+					if (UT66WidgetTools* Tools = GetWidgetTools())
 					{
 						Tools->CreateOrRepairUIWidgetContracts_SelectedWidgets_ForceOverwrite();
 					}

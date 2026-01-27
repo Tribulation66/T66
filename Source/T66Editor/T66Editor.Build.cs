@@ -8,6 +8,11 @@ public class T66Editor : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+        // ✅ Since you're removing Public/ and Private/ and placing headers directly under Source/T66Editor/,
+        // we must explicitly add the module root as an include path.
+        PublicIncludePaths.Add(ModuleDirectory);
+        PrivateIncludePaths.Add(ModuleDirectory);
+
         PublicDependencyModuleNames.AddRange(
             new string[]
             {

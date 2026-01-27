@@ -34,15 +34,19 @@ public:
 	ET66UISurfaceType SurfaceType;
 
 	/**
-	 * Unique identity for this widget (ex: UI.Screen.MainMenu, UI.Modal.Settings, UI.Overlay.Map).
+	 * Canonical identity for a UI surface (ex: UI.Screen.MainMenu, UI.Modal.Settings, UI.Overlay.Map).
+	 *
+	 * - Mandatory for Screen/Modal/Overlay surfaces.
+	 * - Must remain None for Components.
+	 *
 	 * The contracts tool will set/repair this automatically.
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "T66|UI", meta = (Categories = "UI"))
-	FGameplayTag WidgetID;
+	FGameplayTag SurfaceID;
 
 	/**
 	 * Optional focus target the UI system can use when the widget is shown.
-	 * Example tags live under Focus.* (Focus.Primary, Focus.FirstEntry, etc).
+	 * Example tags live under Focus.* (Focus.Primary, Focus.List, Focus.Cancel, etc).
 	 */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "T66|UI", meta = (Categories = "Focus"))
 	FGameplayTag DefaultFocusID;

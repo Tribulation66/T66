@@ -1,10 +1,31 @@
-﻿#include "T66WidgetLayoutRecipes.h"
+﻿#include "T66WidgetTools.h"
+
+#include "EditorAssetLibrary.h"
+#include "BlueprintEditorLibrary.h"
+#include "EdGraphSchema_K2.h"
+#include "Kismet2/BlueprintEditorUtils.h"
+#include "IContentBrowserSingleton.h"
 
 #include "GameplayTagContainer.h"
+
+// Widget BP + WidgetTree editing
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
 #include "Blueprint/UserWidget.h"
 
+// UMG widgets to construct (legacy targeted repair helper)
+#include "Components/Button.h"
+#include "Components/TextBlock.h"
+
+// Content Browser selection
+#include "ContentBrowserModule.h"
+#include "Modules/ModuleManager.h"
+
+// Selected asset type
+#include "AssetRegistry/AssetData.h"
+#include "UObject/UnrealType.h"
+
+// UMG building blocks (used by embedded recipes)
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/VerticalBox.h"
@@ -12,11 +33,249 @@
 #include "Components/HorizontalBox.h"
 #include "Components/HorizontalBoxSlot.h"
 #include "Components/Border.h"
-
 #include "Components/SizeBox.h"
 #include "Components/PanelWidget.h"
 
-#include "UObject/UnrealType.h"
+namespace T66WidgetLayoutRecipes
+{
+	bool TryApplyRecipe(UWidgetBlueprint* WidgetBP, bool bForceOverride);
+}
+
+static const TCHAR* T66_ACTION_BUTTON_BP_PATH =
+TEXT("/Game/Tribulation66/Content/UI/Components/Button/WBP_Comp_Button_Action.WBP_Comp_Button_Action");
+
+static const FName VAR_ControlID(TEXT("ControlID"));
+static const FName VAR_ActionTag(TEXT("ActionTag"));
+static const FName VAR_RouteTag(TEXT("RouteTag"));
+static const FName VAR_LabelText(TEXT("LabelText"));
+
+static const FName WIDGET_ButtonRoot(TEXT("Button_Root"));
+static const FName WIDGET_TextLabel(TEXT("Text_Label"));
+
+namespace T66WidgetTools_Internal
+{
+	static void GatherSelectedWidgetBlueprints(TArray<UWidgetBlueprint*>& OutWidgetBPs)
+	{
+		OutWidgetBPs.Reset();
+
+		FContentBrowserModule& CBModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+		TArray<FAssetData> SelectedAssets;
+		CBModule.Get().GetSelectedAssets(SelectedAssets);
+
+		for (const FAssetData& AD : SelectedAssets)
+		{
+			UObject* AssetObj = AD.GetAsset();
+			if (!AssetObj)
+			{
+				continue;
+			}
+
+			if (UWidgetBlueprint* WB = Cast<UWidgetBlueprint>(AssetObj))
+			{
+				OutWidgetBPs.Add(WB);
+			}
+		}
+	}
+
+	static void EnsureVariable(UWidgetBlueprint* WidgetBP, const FName VarName, const FEdGraphPinType& PinType)
+	{
+		if (!WidgetBP || VarName.IsNone())
+		{
+			return;
+		}
+
+		if (FBlueprintEditorUtils::FindMemberVariableGuidByName(WidgetBP, VarName).IsValid())
+		{
+			return;
+		}
+
+		FBlueprintEditorUtils::AddMemberVariable(WidgetBP, VarName, PinType);
+	}
+
+	static void RebuildWidgetGuidMap(UWidgetBlueprint* WidgetBP)
+	{
+		if (!WidgetBP || !WidgetBP->WidgetTree)
+		{
+			return;
+		}
+
+		WidgetBP->Modify();
+
+		TMap<FName, FGuid> OldMap = WidgetBP->WidgetVariableNameToGuidMap;
+		WidgetBP->WidgetVariableNameToGuidMap.Empty();
+
+		TArray<UWidget*> AllWidgets;
+		WidgetBP->WidgetTree->GetAllWidgets(AllWidgets);
+
+		for (UWidget* W : AllWidgets)
+		{
+			if (!W || !W->bIsVariable)
+			{
+				continue;
+			}
+
+			const FName VarName = W->GetFName();
+			if (VarName.IsNone())
+			{
+				continue;
+			}
+
+			if (const FGuid* Existing = OldMap.Find(VarName))
+			{
+				WidgetBP->WidgetVariableNameToGuidMap.Add(VarName, *Existing);
+			}
+			else
+			{
+				WidgetBP->WidgetVariableNameToGuidMap.Add(VarName, FGuid::NewGuid());
+			}
+		}
+	}
+
+	static void EnsureMinimalWidgetTree(UWidgetBlueprint* WidgetBP)
+	{
+		if (!WidgetBP || !WidgetBP->WidgetTree || WidgetBP->WidgetTree->RootWidget)
+		{
+			return;
+		}
+
+		WidgetBP->Modify();
+		WidgetBP->WidgetTree->Modify();
+
+		UButton* ButtonRoot = WidgetBP->WidgetTree->ConstructWidget<UButton>(UButton::StaticClass(), WIDGET_ButtonRoot);
+		ButtonRoot->bIsVariable = true;
+
+		UTextBlock* TextLabel = WidgetBP->WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), WIDGET_TextLabel);
+		TextLabel->bIsVariable = true;
+
+		ButtonRoot->AddChild(TextLabel);
+		WidgetBP->WidgetTree->RootWidget = ButtonRoot;
+
+		RebuildWidgetGuidMap(WidgetBP);
+	}
+
+	static void ForceReplaceWidgetTree(UWidgetBlueprint* WidgetBP)
+	{
+		if (!WidgetBP)
+		{
+			return;
+		}
+
+		WidgetBP->Modify();
+
+		UWidgetTree* NewTree = NewObject<UWidgetTree>(WidgetBP, UWidgetTree::StaticClass(), NAME_None, RF_Transactional);
+		if (!NewTree)
+		{
+			UE_LOG(LogTemp, Error, TEXT("[T66WidgetTools] ForceReplaceWidgetTree failed for %s"), *GetNameSafe(WidgetBP));
+			return;
+		}
+
+		NewTree->SetFlags(RF_Transactional);
+		WidgetBP->WidgetTree = NewTree;
+	}
+
+	static void ApplyRecipesToWidgetBlueprints(const TArray<UWidgetBlueprint*>& WidgetBPs, const bool bForceOverride, const TCHAR* LogLabel)
+	{
+		int32 NumConsidered = 0, NumStamped = 0, NumSaved = 0;
+
+		for (UWidgetBlueprint* WidgetBP : WidgetBPs)
+		{
+			NumConsidered++;
+
+			if (!WidgetBP)
+			{
+				continue;
+			}
+
+			WidgetBP->Modify();
+
+			if (bForceOverride)
+			{
+				ForceReplaceWidgetTree(WidgetBP);
+			}
+
+			const bool bStamped = T66WidgetLayoutRecipes::TryApplyRecipe(WidgetBP, bForceOverride);
+			if (bStamped)
+			{
+				NumStamped++;
+			}
+
+			UBlueprintEditorLibrary::CompileBlueprint(WidgetBP);
+
+			if (UEditorAssetLibrary::SaveLoadedAsset(WidgetBP, /*bOnlyIfIsDirty=*/true))
+			{
+				NumSaved++;
+			}
+		}
+
+		UE_LOG(LogTemp, Display, TEXT("[T66WidgetTools] %s complete. Considered=%d | Stamped=%d | Saved=%d"),
+			LogLabel, NumConsidered, NumStamped, NumSaved);
+	}
+}
+
+void UT66WidgetTools::CreateOrRepairUIButtonComponents()
+{
+	UObject* LoadedObj = UEditorAssetLibrary::LoadAsset(T66_ACTION_BUTTON_BP_PATH);
+	if (!LoadedObj)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[T66WidgetTools] Failed to load asset: %s"), T66_ACTION_BUTTON_BP_PATH);
+		return;
+	}
+
+	UWidgetBlueprint* WidgetBP = Cast<UWidgetBlueprint>(LoadedObj);
+	if (!WidgetBP)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[T66WidgetTools] Asset is not a UWidgetBlueprint: %s"), T66_ACTION_BUTTON_BP_PATH);
+		return;
+	}
+
+	WidgetBP->Modify();
+
+	FEdGraphPinType GameplayTagType;
+	GameplayTagType.PinCategory = UEdGraphSchema_K2::PC_Struct;
+	GameplayTagType.PinSubCategoryObject = FGameplayTag::StaticStruct();
+
+	FEdGraphPinType TextType;
+	TextType.PinCategory = UEdGraphSchema_K2::PC_Text;
+
+	T66WidgetTools_Internal::EnsureVariable(WidgetBP, VAR_ControlID, GameplayTagType);
+	T66WidgetTools_Internal::EnsureVariable(WidgetBP, VAR_ActionTag, GameplayTagType);
+	T66WidgetTools_Internal::EnsureVariable(WidgetBP, VAR_RouteTag, GameplayTagType);
+	T66WidgetTools_Internal::EnsureVariable(WidgetBP, VAR_LabelText, TextType);
+
+	T66WidgetTools_Internal::EnsureMinimalWidgetTree(WidgetBP);
+
+	UBlueprintEditorLibrary::CompileBlueprint(WidgetBP);
+	const bool bSaved = UEditorAssetLibrary::SaveLoadedAsset(WidgetBP, /*bOnlyIfIsDirty=*/true);
+
+	UE_LOG(LogTemp, Display, TEXT("[T66WidgetTools] CreateOrRepairUIButtonComponents complete | Saved=%s"),
+		bSaved ? TEXT("true") : TEXT("false"));
+}
+
+void UT66WidgetTools::BuildMinimumLayoutsForSelectedWidgetBlueprints()
+{
+	TArray<UWidgetBlueprint*> WidgetBPs;
+	T66WidgetTools_Internal::GatherSelectedWidgetBlueprints(WidgetBPs);
+	T66WidgetTools_Internal::ApplyRecipesToWidgetBlueprints(WidgetBPs, /*bForceOverride=*/true, TEXT("BuildMinimumLayouts"));
+}
+
+void UT66WidgetTools::CreateOrRepairUIWidgetContracts_SelectedWidgets_Safe()
+{
+	TArray<UWidgetBlueprint*> WidgetBPs;
+	T66WidgetTools_Internal::GatherSelectedWidgetBlueprints(WidgetBPs);
+	T66WidgetTools_Internal::ApplyRecipesToWidgetBlueprints(WidgetBPs, /*bForceOverride=*/false, TEXT("WidgetContracts(Safe)"));
+}
+
+void UT66WidgetTools::CreateOrRepairUIWidgetContracts_SelectedWidgets_ForceOverwrite()
+{
+	TArray<UWidgetBlueprint*> WidgetBPs;
+	T66WidgetTools_Internal::GatherSelectedWidgetBlueprints(WidgetBPs);
+	T66WidgetTools_Internal::ApplyRecipesToWidgetBlueprints(WidgetBPs, /*bForceOverride=*/true, TEXT("WidgetContracts(Force)"));
+}
+
+
+// ============================================================================
+// Embedded recipes (formerly T66WidgetLayoutRecipes.*)
+// ============================================================================
 
 // ✅ Shared button component classes
 static const TCHAR* T66_ACTION_BUTTON_CLASS_PATH =
@@ -25,11 +284,6 @@ TEXT("/Game/Tribulation66/Content/UI/Components/Button/WBP_Comp_Button_Action.WB
 static const TCHAR* T66_ICON_BUTTON_CLASS_PATH =
 TEXT("/Game/Tribulation66/Content/UI/Components/Button/WBP_Comp_Button_IconOnly.WBP_Comp_Button_IconOnly_C");
 
-// ✅ Exposed variables on WBP_Comp_Button_Action (and optionally on other button widgets if they match)
-static const FName VAR_ControlID(TEXT("ControlID"));
-static const FName VAR_ActionTag(TEXT("ActionTag"));
-static const FName VAR_RouteTag(TEXT("RouteTag"));
-static const FName VAR_LabelText(TEXT("LabelText"));
 
 namespace T66WidgetLayoutRecipes_Internal
 {

@@ -1,11 +1,10 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
-#include "T66WidgetLayoutToolsSubsystem.generated.h"
+#include "T66WidgetTools.generated.h"
 
 /**
- * UT66WidgetLayoutToolsSubsystem
+ * UT66WidgetTools
  * Editor-only utilities for stamping/repairing Widget Blueprints.
  *
  * FINAL POLICY (Contracts):
@@ -13,7 +12,7 @@
  * - FORCE: Delete + rebuild from recipe (apply newest contracts exactly)
  */
 UCLASS()
-class T66EDITOR_API UT66WidgetLayoutToolsSubsystem : public UEditorSubsystem
+class T66EDITOR_API UT66WidgetTools : public UEditorSubsystem
 {
 	GENERATED_BODY()
 
