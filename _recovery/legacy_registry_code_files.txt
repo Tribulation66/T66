@@ -1,2 +1,0 @@
-Source\T66\Data\Reg\T66RegistryBaseDA.cpp
-Source\T66\Data\Reg\T66RegistryBaseDA.h

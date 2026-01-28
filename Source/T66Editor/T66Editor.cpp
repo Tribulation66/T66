@@ -1,4 +1,4 @@
-#include "Modules/ModuleManager.h"
+﻿#include "Modules/ModuleManager.h"
 #include "ToolMenus.h"
 #include "Editor.h"
 
@@ -44,25 +44,6 @@ private:
 				if (!GEditor) return nullptr;
 				return GEditor->GetEditorSubsystem<UT66WidgetTools>();
 			};
-
-		// 0) Core Data (DT-first): Create/Repair core DTs + DataCatalog
-		{
-			FToolUIActionChoice Action(FExecuteAction::CreateLambda([GetRegistryToolsSubsystem]()
-				{
-					if (UT66RegistryTools* Tools = GetRegistryToolsSubsystem())
-					{
-						Tools->CreateOrRepairCoreDataTablesAndCatalog();
-					}
-				}));
-
-			Section.AddEntry(FToolMenuEntry::InitMenuEntry(
-				FName("T66Tools_CreateOrRepairCoreDataTablesAndCatalog"),
-				FText::FromString("T66 Tools: Create/Repair Core DataTables + DataCatalog"),
-				FText::FromString("Creates DT_Items/DT_Enemies/DT_StageEffects/DT_Companions and wires DA_DataCatalog_Core. No manual Content Browser setup."),
-				FSlateIcon(),
-				Action
-			));
-		}
 
 		// 1) Fill Surface Registry
 		{

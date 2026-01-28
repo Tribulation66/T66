@@ -608,24 +608,3 @@ void UT66RegistryTools::CreateOrRepairUIThemeAssets()
 		NumSaved,
 		*CanonicalThemeFolder);
 }
-
-#include "T66CoreDataTools.h"
-
-// These functions are declared in T66RegistryTools.h; they must exist in the .cpp
-// so UHT-generated exec wrappers can link successfully.
-
-bool UT66RegistryTools::RunCoreDataRepair(bool bForceOverwrite)
-{
-	return FT66CoreDataTools::CreateOrRepairAndValidateCoreData(bForceOverwrite);
-}
-
-void UT66RegistryTools::CreateOrRepairCoreDataTablesAndCatalog()
-{
-	RunCoreDataRepair(false);
-}
-
-void UT66RegistryTools::CreateOrRepairCoreDataTablesAndCatalog_ForceOverwrite()
-{
-	RunCoreDataRepair(true);
-}
-
