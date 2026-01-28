@@ -1,4 +1,4 @@
-﻿// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -31,7 +31,12 @@ public class T66 : ModuleRules
             "T66",
 
             // ✅ Correct path (relative to Source/T66)
+            "T66/Data",
+            "T66/Gameplay",
+            "T66/Selection",
+            "T66/UI/Preview",
             "T66/UI/Registry",
+            "T66/UI/Shell",
 
             "T66/Variant_Platforming",
             "T66/Variant_Platforming/Animation",

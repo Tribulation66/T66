@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "CoreMinimal.h"
 #include "EditorSubsystem.h"
@@ -10,19 +10,25 @@ class T66EDITOR_API UT66RegistryTools : public UEditorSubsystem
 	GENERATED_BODY()
 
 public:
-	// ✅ Fills DA_UIRegistry_Surfaces using WBP_* names
 	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
 	void FillSurfaceRegistry();
 
-	// ✅ Fills DA_T66UIInputContexts using IMC_UI_* names
 	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
 	void FillInputContextRegistry();
 
-	// ✅ Applies default UI keybinds into IMC_UI_* (keyboard + gamepad + Steam Deck)
 	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
 	void ApplyDefaultUIKeybinds();
 
-	// ✅ Creates/repairs the required DA_UITheme_* assets and auto-fills safe defaults
 	UFUNCTION(CallInEditor, Category = "T66|RegistryTools")
 	void CreateOrRepairUIThemeAssets();
+
+	// Core Data (DT-first)
+	UFUNCTION(CallInEditor, Category = "T66|CoreData")
+	void CreateOrRepairCoreDataTablesAndCatalog();
+
+	UFUNCTION(CallInEditor, Category = "T66|CoreData")
+	void CreateOrRepairCoreDataTablesAndCatalog_ForceOverwrite();
+
+	// Returns true if validation passes
+	static bool RunCoreDataRepair(bool bForceOverwrite);
 };

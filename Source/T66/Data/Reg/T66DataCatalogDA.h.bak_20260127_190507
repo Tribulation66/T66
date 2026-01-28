@@ -1,0 +1,114 @@
+#pragma once
+
+#include "CoreMinimal.h"
+#include "Engine/DataAsset.h"
+#include "Engine/DataTable.h"
+#include "T66DataCatalogDA.generated.h"
+
+class UDataTable;
+
+
+/**
+ * Canonical references to DataTables (DT-first pipeline).
+ * Keeps runtime/tools from hardcoding /Game paths.
+ */
+UCLASS(BlueprintType)
+class T66_API UT66DataCatalogDA : public UDataAsset
+{
+        GENERATED_BODY()
+
+public:
+        // Core bulk content
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> ItemsTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> EnemiesTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> StageEffectsTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> CompanionsTable;
+
+        // Supporting DTs (enemy cross-references + luck model)
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> AttackPatternsTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> MovementProfilesTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> LuckSourcesTable;
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Sec")
+        TSoftObjectPtr<UDataTable> AntiCheatRulesTable;
+
+
+        // Combat / special behavior DTs
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> UltimatesTable;
+
+        UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="T66|Catalog")
+        TSoftObjectPtr<UDataTable> WhiteItemsTable;
+
+
+        // Stage / run rules DTs (tuning knobs, not rosters)
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Stage")
+        TSoftObjectPtr<UDataTable> MiasmaRulesTable;
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Stage")
+        TSoftObjectPtr<UDataTable> ArenaRulesTable;
+
+
+
+        // NPC / Interactables data tables
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> NPCProfilesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> VendorRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> GamblerRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> SaintRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> TricksterRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> OuroborosRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> StealMatrixTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|NPC")
+        TSoftObjectPtr<UDataTable> CheatMatrixTable;
+
+
+        // World Interactables + Special Enemies DTs
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|World")
+        TSoftObjectPtr<UDataTable> InteractablesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|World|Interactables")
+        TSoftObjectPtr<UDataTable> SpinWheelRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|World|Interactables")
+        TSoftObjectPtr<UDataTable> CashTruckRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|World|Interactables")
+        TSoftObjectPtr<UDataTable> LifeTreeRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Enemy|Special")
+        TSoftObjectPtr<UDataTable> SpecialEnemyProfilesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Enemy|Special")
+        TSoftObjectPtr<UDataTable> GoblinThiefRulesTable;
+
+        UPROPERTY(EditDefaultsOnly, Category="T66|Catalog|Enemy|Special")
+        TSoftObjectPtr<UDataTable> LeprechaunRulesTable;
+
+};

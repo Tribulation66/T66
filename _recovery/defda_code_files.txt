@@ -1,0 +1,14 @@
+Source/T66/Boss/T66BossDefDA.cpp
+Source/T66/Boss/T66BossDefDA.h
+Source/T66/Combat/T66StatusDefDA.cpp
+Source/T66/Combat/T66StatusDefDA.h
+Source/T66/Enemy/T66EnemyDefDA.cpp
+Source/T66/Enemy/T66EnemyDefDA.h
+Source/T66/Hero/T66HeroDefDA.cpp
+Source/T66/Hero/T66HeroDefDA.h
+Source/T66/Item/T66ItemDefDA.cpp
+Source/T66/Item/T66ItemDefDA.h
+Source/T66/Stage/T66StageDefDA.cpp
+Source/T66/Stage/T66StageDefDA.h
+Source/T66/World/T66InteractableDefDA.cpp
+Source/T66/World/T66InteractableDefDA.h

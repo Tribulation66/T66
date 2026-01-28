@@ -1,0 +1,17 @@
+#include "T66CoreDataRepairCommandlet.h"
+#include "T66RegistryTools.h"
+
+UT66CoreDataRepairCommandlet::UT66CoreDataRepairCommandlet()
+{
+	IsClient = false;
+	IsEditor = true;
+	IsServer = false;
+	LogToConsole = true;
+}
+
+int32 UT66CoreDataRepairCommandlet::Main(const FString& Params)
+{
+	const bool bForce = Params.Contains(TEXT("Force"), ESearchCase::IgnoreCase);
+	const bool bOk = UT66RegistryTools::RunCoreDataRepair(bForce);
+	return bOk ? 0 : 1;
+}
